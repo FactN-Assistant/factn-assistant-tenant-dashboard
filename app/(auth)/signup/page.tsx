@@ -1,4 +1,4 @@
-import { SignupForm } from "@/components/signup-form";
+import { SignupForm } from "@/components/user/signup-form";
 import { AudioLines } from "lucide-react";
 
 export default function signup() {

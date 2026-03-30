@@ -1,18 +1,18 @@
 'use client'
 
-import Aurora from "../components/Aurora"
+import Aurora from "../../components/user/decoration/Aurora"
 
 export default function HomePage() {
   return (
     <div className="relative min-h-screen w-full">
       <div className="fixed inset-0 -z-10">
         <Aurora
-          colorStops={["#2c378c", "#00ff00", "#022501", "#00ff00", "#2c378c"]}
-          amplitude={3}
-          blend={0.75}
+          colorStops={["#5227FF","#7cff67","#5227FF"]}
+          amplitude={1}
+          blend={0.5}
         />
       </div>
-
+      
       <main className="relative z-10 flex flex-col items-center justify-center pt-20">
         <p className="text-8xl font-bold text-neutral-200">FactN Assistant</p>
         
@@ -21,5 +21,6 @@ export default function HomePage() {
         </div>
       </main>
     </div>
+      
   )
 }
