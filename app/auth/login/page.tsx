@@ -1,5 +1,5 @@
 import { LoginForm } from "@/components/login-form";
-import { AudioLines, GalleryVerticalEnd } from "lucide-react";
+import { AudioLines } from "lucide-react";
 
 export default function Login() {
   return(
