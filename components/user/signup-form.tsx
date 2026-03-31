@@ -10,18 +10,22 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { useState } from "react";
-import toast from "react-hot-toast"
+import { useRouter } from "next/navigation"
 
 export function SignupForm({
   className,
   ...props
 }: React.ComponentProps<"form">) {
+  const router = useRouter()
+  
   const [formData, setFormData] = useState({
     full_name: "",
     email: "",
     password: "",
     confirm_password: "",
   });
+
+  const [loading, setLoading] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -31,16 +35,18 @@ export function SignupForm({
   };
 
   const onSubmit = () => {
-    //write your onsubmit loogic here.
-    console.log("data: ", formData)
-
-    toast.loading("Creating your profile...")
-    toast.error("Error...")
-    toast.success("Successful...")
+    console.log("Signup")
   }
 
   return (
-    <form className={cn("flex flex-col gap-6", className)} {...props}>
+    <form 
+      className={cn("flex flex-col gap-6", className)} 
+      onSubmit={e => { 
+        e.preventDefault(); 
+        onSubmit() 
+      }}
+      {...props}
+    >
       <FieldGroup>
         <div className="flex flex-col items-center gap-1 text-center">
           <h1 className="text-2xl font-bold">Create your account</h1>
@@ -57,6 +63,7 @@ export function SignupForm({
             placeholder="John Doe"
             value={formData.full_name}
             required
+            disabled={loading}
             className="bg-background h-10"
             onChange={handleChange}
           />
@@ -70,6 +77,7 @@ export function SignupForm({
             value={formData.email}
             placeholder="john@example.com"
             required
+            disabled={loading}
             className="bg-background h-10"
             onChange={handleChange}
           />
@@ -85,6 +93,7 @@ export function SignupForm({
             name="password"
             value={formData.password}
             required
+            disabled={loading}
             className="bg-background h-10"
             onChange={handleChange}
           />
@@ -100,13 +109,22 @@ export function SignupForm({
             name="confirm_password"
             value={formData.confirm_password}
             required
+            disabled={loading}
             className="bg-background h-10"
             onChange={handleChange}
           />
           <FieldDescription>Please confirm your password.</FieldDescription>
         </Field>
         <Field>
-          <Button type="button" className="h-10" size={"lg"} onClick={onSubmit}>Create Account</Button>
+          <Button 
+            type="button" 
+            className="h-10" 
+            size={"lg"} 
+            onClick={onSubmit}
+            disabled={loading}
+          >
+            {loading ? "Creating account…" : "Create Account"}
+          </Button>
         </Field>
         {/* <FieldSeparator>Or continue with</FieldSeparator> */}
         <Field>
