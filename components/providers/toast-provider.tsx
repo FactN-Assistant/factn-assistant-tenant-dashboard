@@ -5,12 +5,14 @@ import { Toaster } from "react-hot-toast";
 export const ToasterProvider = () => {
   return (
     <Toaster
-      position="top-center"
+      position="top-right"
       toastOptions={{
-        duration: 3000,
+        duration: 4000,
         style: {
           background: "#333",
           color: "#fff",
+          borderRadius: "8px",
+          fontSize:     "14px",
         },
       }}
     />

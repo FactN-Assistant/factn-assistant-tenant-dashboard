@@ -1,5 +1,9 @@
 export default function Pricing() {
   return (
-    <h1>Pricing</h1>
+    <div>
+      <h1>
+        Pricing
+      </h1>
+    </div>
   )
 }

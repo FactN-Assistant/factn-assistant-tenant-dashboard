@@ -11,15 +11,20 @@ import {
 import { Input } from "@/components/ui/input"
 import { useState } from "react"
 import toast from "react-hot-toast"
+import { useRouter } from "next/navigation"
+import { signIn } from "next-auth/react"
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"form">) {
+  const router = useRouter()
+  
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
+  const [loading,  setLoading]  = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -28,17 +33,54 @@ export function LoginForm({
       }));
   };
 
-  const onSubmit = () => {
-    //write your onsubmit loogic here.
-    console.log("data: ", formData)
+  const onSubmit = async () => {
+    if (!formData.email || !formData.password) {
+      toast.error("Please fill in all fields.")
+      return
+    }
+ 
+    setLoading(true)
+    const toastId = toast.loading("Signing in…")
+ 
+    try {
+      /**
+       * signIn("credentials") calls our authorize() function in lib/auth.ts
+       * which calls the backend POST /v1/auth/login.
+       *
+       * redirect: false → we handle the redirect ourselves so we can show
+       * a toast on error instead of navigating to the NextAuth error page.
+       */
+      const result = await signIn("credentials", {
+        email:    formData.email,
+        password: formData.password,
+        action:   "login",
+        redirect: false,
+      })
 
-    toast.loading("Creating your profile...")
-    toast.error("Error...")
-    toast.success("Successful...")
+      console.log("result: ",result);
+ 
+      if (result?.error) {
+        // NextAuth surfaces the error thrown in authorize() as result.error
+        toast.error(result.error, { id: toastId })
+      } else {
+        toast.success("Welcome back!", { id: toastId })
+        // Redirect to the dashboard after successful login
+        router.push("/dashboard")
+        router.refresh()  // re-run server components with the new session
+      }
+    } catch {
+      toast.error("Something went wrong. Please try again.", { id: toastId })
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
-    <form className={cn("flex flex-col gap-6", className)} {...props}>
+    <form 
+      className={cn("flex flex-col gap-6", className)} {...props}
+      onSubmit={e => { e.preventDefault(); onSubmit() }}
+      {...props}
+    >
       <FieldGroup>
         <div className="flex flex-col items-center gap-1 text-center">
           <h1 className="text-2xl font-bold">Login to your account</h1>
@@ -54,6 +96,7 @@ export function LoginForm({
             name="email"
             placeholder="john@example.com"
             required
+            disabled={loading}
             className="bg-background h-10"
             value={formData.email}
             onChange={handleChange}
@@ -74,13 +117,22 @@ export function LoginForm({
             type="password"
             name="password"
             required
+            disabled={loading}
             className="bg-background h-10"
             value={formData.password}
             onChange={handleChange}
           />
         </Field>
         <Field>
-          <Button type="button" className="h-10" size={"lg"} onClick={onSubmit}>Login</Button>
+          <Button 
+            type="button" 
+            className="h-10" 
+            size={"lg"} 
+            onClick={onSubmit}
+            disabled={loading}
+          >
+            {loading ? "Signing in…" : "Login"}
+          </Button>
         </Field>
         {/* <FieldSeparator>Or continue with</FieldSeparator> */}
         <Field>

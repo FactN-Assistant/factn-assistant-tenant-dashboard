@@ -1,8 +1,8 @@
-export default function About() {
+export default function Docs() {
   return (
     <div>
       <h1>
-        About
+        Docs
       </h1>
     </div>
   )
