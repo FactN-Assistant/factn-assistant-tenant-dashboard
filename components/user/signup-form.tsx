@@ -11,23 +11,17 @@ import {
 import { Input } from "@/components/ui/input"
 import { useState } from "react";
 import toast from "react-hot-toast"
-import { useRouter } from "next/navigation"
-import { signIn } from "next-auth/react"
 
 export function SignupForm({
   className,
   ...props
 }: React.ComponentProps<"form">) {
-  const router = useRouter()
-  
   const [formData, setFormData] = useState({
     full_name: "",
     email: "",
     password: "",
     confirm_password: "",
   });
-
-  const [loading, setLoading] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -36,62 +30,17 @@ export function SignupForm({
       }));
   };
 
-  const onSubmit = async () => {
-    // Client-side validation before hitting the network
-    if (!formData.full_name.trim()) {
-      toast.error("Full name is required.")
-      return
-    }
-    if (!formData.email || !formData.password) {
-      toast.error("Please fill in all fields.")
-      return
-    }
-    if (formData.password.length < 8) {
-      toast.error("Password must be at least 8 characters.")
-      return
-    }
-    if (formData.password !== formData.confirm_password) {
-      toast.error("Passwords do not match.")
-      return
-    }
- 
-    setLoading(true)
-    const toastId = toast.loading("Creating your account…")
- 
-    try {
-      /**
-       * We pass action: "register" so our authorize() function in lib/auth.ts
-       * knows to call /v1/auth/register instead of /v1/auth/login.
-       * This lets us reuse the same Credentials provider for both flows.
-       */
-      const result = await signIn("credentials", {
-        email:    formData.email,
-        password: formData.password,
-        name:     formData.full_name.trim(),
-        action:   "register",
-        redirect: false,
-      })
- 
-      if (result?.error) {
-        toast.error(result.error, { id: toastId })
-      } else {
-        toast.success("Account created! Welcome.", { id: toastId })
-        router.push("/dashboard")
-        router.refresh()
-      }
-    } catch {
-      toast.error("Something went wrong. Please try again.", { id: toastId })
-    } finally {
-      setLoading(false)
-    }
+  const onSubmit = () => {
+    //write your onsubmit loogic here.
+    console.log("data: ", formData)
+
+    toast.loading("Creating your profile...")
+    toast.error("Error...")
+    toast.success("Successful...")
   }
 
   return (
-    <form 
-      className={cn("flex flex-col gap-6", className)} 
-      onSubmit={e => { e.preventDefault(); onSubmit() }}
-      {...props}
-    >
+    <form className={cn("flex flex-col gap-6", className)} {...props}>
       <FieldGroup>
         <div className="flex flex-col items-center gap-1 text-center">
           <h1 className="text-2xl font-bold">Create your account</h1>
@@ -108,7 +57,6 @@ export function SignupForm({
             placeholder="John Doe"
             value={formData.full_name}
             required
-            disabled={loading}
             className="bg-background h-10"
             onChange={handleChange}
           />
@@ -122,7 +70,6 @@ export function SignupForm({
             value={formData.email}
             placeholder="john@example.com"
             required
-            disabled={loading}
             className="bg-background h-10"
             onChange={handleChange}
           />
@@ -138,7 +85,6 @@ export function SignupForm({
             name="password"
             value={formData.password}
             required
-            disabled={loading}
             className="bg-background h-10"
             onChange={handleChange}
           />
@@ -154,22 +100,13 @@ export function SignupForm({
             name="confirm_password"
             value={formData.confirm_password}
             required
-            disabled={loading}
             className="bg-background h-10"
             onChange={handleChange}
           />
           <FieldDescription>Please confirm your password.</FieldDescription>
         </Field>
         <Field>
-          <Button 
-            type="button" 
-            className="h-10" 
-            size={"lg"} 
-            onClick={onSubmit}
-            disabled={loading}
-          >
-            {loading ? "Creating account…" : "Create Account"}
-          </Button>
+          <Button type="button" className="h-10" size={"lg"} onClick={onSubmit}>Create Account</Button>
         </Field>
         {/* <FieldSeparator>Or continue with</FieldSeparator> */}
         <Field>

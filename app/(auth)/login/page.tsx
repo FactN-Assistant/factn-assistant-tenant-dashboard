@@ -1,17 +1,12 @@
-import { SignupForm } from "@/components/user/signup-form";
+import { LoginForm } from "@/components/user/login-form";
 import { AudioLines } from "lucide-react";
-import { Metadata } from "next";
 
-export const metadata: Metadata = {
-  title: "Sign Up — FactN Assistant"
-}
-
-export default function signup() {
+export default function Login() {
   return(
     <div className="grid min-h-svh lg:grid-cols-2">
       <div className="flex flex-col gap-4 p-6 md:p-10">
         <div className="flex justify-center gap-2 md:justify-start">
-          <a href="/" className="flex items-center gap-2 font-medium">
+          <a href="#" className="flex items-center gap-2 font-medium">
             <div className="flex size-8 items-center justify-center rounded-md border text-primary-foreground">
               <AudioLines className="size-5" color="white" />
             </div>
@@ -20,7 +15,7 @@ export default function signup() {
         </div>
         <div className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-xs">
-            <SignupForm />
+            <LoginForm />
           </div>
         </div>
       </div>
