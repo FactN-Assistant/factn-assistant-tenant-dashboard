@@ -2,18 +2,20 @@ import { AudioLines } from "lucide-react";
 import Link from "next/link";
 import { Button, buttonVariants } from "../ui/button";
 import { cn } from "@/lib/utils";
+import PrimaryLink from "../primary-link";
+import SecondaryLink from "../secondary-link";
 
 export default function HomeHeader() {
   return (
     // Added w-full, z-50, and relative or fixed positioning
     // Also added px-4 so the items aren't touching the screen edges
-    <header className="fixed top-0 left-0 w-full z-50 flex flex-row border-b h-12 items-center justify-between px-6 bg-black/30 backdrop-blur-sm">
+    <header className="fixed top-4 rounded-full shadow w-7xl mx-auto z-50 flex flex-row border-b h-16 items-center justify-between px-3 bg-black/30 backdrop-blur-lg">
       <a href="/">
-        <div className="flex items-center">
+        <div className="flex items-center border p-2 rounded-full hover:bg-black/20 transition-all duration-300 ease-in-out">
           <AudioLines />
         </div>
       </a>
-      <nav className="flex flex-row gap-5 items-center justify-center">
+      <nav className="flex flex-row gap-7 items-center justify-center">
         <Link className="cursor-pointer hover:text-green-500 transition-colors" href={"docs"}>
           Docs
         </Link>
@@ -23,10 +25,10 @@ export default function HomeHeader() {
         <Link className="cursor-pointer hover:text-green-500 transition-colors" href={"pricing"}>
           Pricing
         </Link>
-        <Link className={cn(buttonVariants({ variant: "default" }), "bg-green-600 hover:bg-green-700 text-white border-none")} href="dashboard">
-          Dashboard
-        </Link>
-
+        <div className="flex flex-row gap-3">
+          <SecondaryLink title={"Login"} href={"/auth/login"} />
+          <PrimaryLink title={"Register"} href={"/auth/signup"} />
+        </div>
       </nav>
       
     </header>

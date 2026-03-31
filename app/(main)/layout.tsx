@@ -26,7 +26,7 @@ export default function MainLayout({
   return (
     <>
       <HomeHeader />
-      <main className="pt-12 flex-1">
+      <main className="mt-12 border w-7xl max-w-7xl mx-auto">
         {children}
       </main>
     </>

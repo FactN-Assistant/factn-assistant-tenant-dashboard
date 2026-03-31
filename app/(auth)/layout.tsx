@@ -25,7 +25,7 @@ export default async function AuthLayout({
 
   return (
     <>
-      <main className="flex-1">
+      <main className="w-full">
         {children}
       </main>
     </>
