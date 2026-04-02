@@ -1,22 +1,22 @@
-import { LoginForm } from "@/components/user/login-form";
-import { AudioLines } from "lucide-react";
-import { Metadata } from "next";
+'use client'
 
-export const metadata: Metadata = {
-  title: "Login — FactN Assistant",
-}
+import { LoginForm } from "@/components/user/login-form";
+import { AudioLines, GalleryVerticalEnd, GalleryVerticalEndIcon } from "lucide-react";
+import FloatingLines from "@/components/user/decoration/FloatingLines"
+import { TEXTS } from "@/lib/constants";
+
 
 export default function Login() {
   return(
-    <div className="grid min-h-svh lg:grid-cols-2">
+    <div className="grid min-h-svh lg:grid-cols-[1fr_2fr]">
       <div className="flex flex-col gap-4 p-6 md:p-10">
         <div className="flex justify-center gap-2 md:justify-start">
-          <a href="/" className="flex items-center gap-2 font-medium">
-            <div className="flex size-8 items-center justify-center rounded-md border text-primary-foreground">
-              <AudioLines className="size-5" color="white" />
+          <a href="/" className="flex items-center gap-2 self-center font-medium">
+            <div className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
+              <AudioLines className="size-4" />
             </div>
-            FactN Assistant
-          </a>
+              {TEXTS.APP_NAME}
+           </a>
         </div>
         <div className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-xs">
@@ -25,14 +25,20 @@ export default function Login() {
         </div>
       </div>
       <div className="relative hidden bg-muted lg:block">
-        <video 
-          src="/orb.mp4"
-          autoPlay      // Starts the video as soon as it's ready
-          loop          // Restarts the video when it finishes
-          muted         // REQUIRED for autoPlay to work in most browsers
-          playsInline   // Required for autoPlay on mobile browsers (iOS/Android)
-          className="absolute inset-0 h-full w-full object-cover"
-        />
+        <div className="w-full h-full">
+          <FloatingLines
+            linesGradient={["#47f553","#2fc15b","#47f56a"]}
+            animationSpeed={1}
+            interactive
+            bendRadius={5}
+            bendStrength={-0.5}
+            mouseDamping={0.05}
+            parallax
+            parallaxStrength={0.2}
+            topWavePosition={undefined} 
+            middleWavePosition={undefined}          
+          />
+        </div>
       </div>
     </div>
   )

@@ -1,5 +1,6 @@
 'use client'
 
+import { TEXTS } from "@/lib/constants"
 import Aurora from "../../components/user/decoration/Aurora"
 
 export default function HomePage() {
@@ -14,10 +15,14 @@ export default function HomePage() {
       </div>
       
       <main className="relative z-10 flex flex-col items-center justify-center pt-20">
-        <p className="text-8xl w-full py-3 text-center font-bold text-neutral-200 border-y">FactN Assistant</p>
+        <p className="text-8xl w-full py-3 text-center font-bold text-neutral-200 border-y">
+          {TEXTS.APP_NAME}
+        </p>
         
         <div className="h-[200vh]">
-          <p className="mt-10 text-5xl">Skip the AI Ops. Just Build the Experience.</p>
+          <p className="mt-10 text-5xl">
+            {TEXTS.APP_TAGLINE}
+          </p>
         </div>
       </main>
     </div>

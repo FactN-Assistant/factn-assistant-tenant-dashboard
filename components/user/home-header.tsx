@@ -7,14 +7,12 @@ import SecondaryLink from "../secondary-link";
 
 export default function HomeHeader() {
   return (
-    // Added w-full, z-50, and relative or fixed positioning
-    // Also added px-4 so the items aren't touching the screen edges
     <header className="fixed top-4 rounded-full shadow w-7xl mx-auto z-50 flex flex-row border-b h-16 items-center justify-between px-3 bg-black/30 backdrop-blur-lg">
-      <a href="/">
+      <Link href="/">
         <div className="flex items-center border p-2 rounded-full hover:bg-black/20 transition-all duration-300 ease-in-out">
           <AudioLines />
         </div>
-      </a>
+      </Link>
       <nav className="flex flex-row gap-7 items-center justify-center">
         <Link className="cursor-pointer hover:text-green-500 transition-colors" href={"docs"}>
           Docs
