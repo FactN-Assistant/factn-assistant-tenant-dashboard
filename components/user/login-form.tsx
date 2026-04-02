@@ -10,16 +10,19 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { useState } from "react"
-import toast from "react-hot-toast"
+import { useRouter } from "next/navigation"
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"form">) {
+  const router = useRouter()
+  
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
+  const [loading,  setLoading]  = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -29,16 +32,19 @@ export function LoginForm({
   };
 
   const onSubmit = () => {
-    //write your onsubmit loogic here.
-    console.log("data: ", formData)
-
-    toast.loading("Creating your profile...")
-    toast.error("Error...")
-    toast.success("Successful...")
+    console.log("Login")
   }
 
+
   return (
-    <form className={cn("flex flex-col gap-6", className)} {...props}>
+    <form 
+      className={cn("flex flex-col gap-6", className)} {...props}
+      onSubmit={e => { 
+        e.preventDefault(); 
+        onSubmit() 
+      }}
+      {...props}
+    >
       <FieldGroup>
         <div className="flex flex-col items-center gap-1 text-center">
           <h1 className="text-2xl font-bold">Login to your account</h1>
@@ -54,6 +60,7 @@ export function LoginForm({
             name="email"
             placeholder="john@example.com"
             required
+            disabled={loading}
             className="bg-background h-10"
             value={formData.email}
             onChange={handleChange}
@@ -74,13 +81,22 @@ export function LoginForm({
             type="password"
             name="password"
             required
+            disabled={loading}
             className="bg-background h-10"
             value={formData.password}
             onChange={handleChange}
           />
         </Field>
         <Field>
-          <Button type="button" className="h-10" size={"lg"} onClick={onSubmit}>Login</Button>
+          <Button 
+            type="button" 
+            className="h-10" 
+            size={"lg"} 
+            onClick={onSubmit}
+            disabled={loading}
+          >
+            {loading ? "Signing in…" : "Login"}
+          </Button>
         </Field>
         {/* <FieldSeparator>Or continue with</FieldSeparator> */}
         <Field>

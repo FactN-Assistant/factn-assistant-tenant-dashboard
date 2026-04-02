@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "../globals.css";
-import { ThemeProvider } from "@/components/providers/theme-provider";
-import { ToasterProvider } from "@/components/providers/toast-provider";
 import HomeHeader from "@/components/user/home-header";
 
 const geistSans = Geist({
@@ -26,14 +24,11 @@ export default function MainLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en" suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col antialiased">
-        <HomeHeader />
+    <>
+      <HomeHeader />
+      <main className="mt-12 border w-7xl max-w-7xl mx-auto">
         {children}
-      </body>
-    </html>
+      </main>
+    </>
   );
 }
