@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "../globals.css";
 import HomeHeader from "@/components/user/home-header";
+import { ThemeToggler } from "@/components/theme-toggler";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,6 +27,7 @@ export default function MainLayout({
   return (
     <>
       <HomeHeader />
+      <ThemeToggler className="fixed bottom-4 left-1 z-50" />
       <main className="mt-12 border w-7xl max-w-7xl mx-auto">
         {children}
       </main>
