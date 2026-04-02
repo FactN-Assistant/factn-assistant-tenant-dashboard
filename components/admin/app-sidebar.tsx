@@ -1,181 +1,158 @@
+"use client"
+
 import * as React from "react"
+import {
+  AudioLines,
+  BookOpen,
+  ChartArea,
+  Frame,
+  Hammer,
+  LifeBuoy,
+  Map,
+  MicVocal,
+  MonitorCog,
+  PieChart,
+  Play,
+  Send,
+  Settings,
+  Waves,
+} from "lucide-react"
+
 
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
-  SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarRail,
 } from "@/components/ui/sidebar"
-import { VersionSwitcher } from "./version-switcher"
+import { NavMain } from "./nav-main"
+import { NavProjects } from "./nav-projects"
+import { NavSecondary } from "./nav-secondary"
+import { ProjectSelector } from "./nav-user"
+import { TEXTS } from "@/lib/constants"
+import { Separator } from "@/components/ui/separator"
+import CustomSidebarItem from "./custom-sidebar-item"
 
-// This is sample data.
 const data = {
-  versions: ["1.0.1", "1.1.0-alpha", "2.0.0-beta1"],
-  
+  user: {
+    name: "shadcn",
+    email: "m@example.com",
+    avatar: "/avatars/shadcn.jpg",
+  },
+  general: [
+    {
+      title: "Project Stats",
+      url: "/dashboard/stats",
+      icon: ChartArea,
+    },
+    {
+      title: "Playground",
+      url: "/dashboard/playground",
+      icon: Play,
+    },
+  ],
   navMain: [
     {
-      title: "Getting Started",
-      url: "#",
-      items: [
-        {
-          title: "Installation",
-          url: "#",
-        },
-        {
-          title: "Project Structure",
-          url: "#",
-        },
-      ],
+      title: "System Prompt",
+      url: "/dashboard/system_prompt",
+      icon: MonitorCog,
     },
     {
-      title: "Build Your Application",
-      url: "#",
-      items: [
-        {
-          title: "Routing",
-          url: "#",
-        },
-        {
-          title: "Data Fetching",
-          url: "#",
-          isActive: true,
-        },
-        {
-          title: "Rendering",
-          url: "#",
-        },
-        {
-          title: "Caching",
-          url: "#",
-        },
-        {
-          title: "Styling",
-          url: "#",
-        },
-        {
-          title: "Optimizing",
-          url: "#",
-        },
-        {
-          title: "Configuring",
-          url: "#",
-        },
-        {
-          title: "Testing",
-          url: "#",
-        },
-        {
-          title: "Authentication",
-          url: "#",
-        },
-        {
-          title: "Deploying",
-          url: "#",
-        },
-        {
-          title: "Upgrading",
-          url: "#",
-        },
-        {
-          title: "Examples",
-          url: "#",
-        },
-      ],
+      title: "Tools",
+      url: "/dashboard/tools",
+      icon: Hammer,
     },
     {
-      title: "API Reference",
+      title: "Voice Config",
+      url: "/dashboard/voice_config",
+      icon: MicVocal,
+    },
+  ],
+  navSecondary: [
+    {
+      title: "Settings",
       url: "#",
-      items: [
-        {
-          title: "Components",
-          url: "#",
-        },
-        {
-          title: "File Conventions",
-          url: "#",
-        },
-        {
-          title: "Functions",
-          url: "#",
-        },
-        {
-          title: "next.config.js Options",
-          url: "#",
-        },
-        {
-          title: "CLI",
-          url: "#",
-        },
-        {
-          title: "Edge Runtime",
-          url: "#",
-        },
-      ],
+      icon: Settings,
     },
     {
-      title: "Architecture",
+      title: "Support",
       url: "#",
-      items: [
-        {
-          title: "Accessibility",
-          url: "#",
-        },
-        {
-          title: "Fast Refresh",
-          url: "#",
-        },
-        {
-          title: "Next.js Compiler",
-          url: "#",
-        },
-        {
-          title: "Supported Browsers",
-          url: "#",
-        },
-        {
-          title: "Turbopack",
-          url: "#",
-        },
-      ],
+      icon: LifeBuoy,
+    },
+    {
+      title: "Feedback",
+      url: "#",
+      icon: Send,
+    },
+  ],
+
+  projects: [
+    {
+      name: "Design Engineering",
+      url: "/dashboard/system_prompt",
+      icon: Frame,
+    },
+    {
+      name: "Sales & Marketing",
+      url: "#",
+      icon: PieChart,
+    },
+    {
+      name: "Travel",
+      url: "#",
+      icon: Map,
     },
   ],
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
-    <Sidebar {...props}>
+    <Sidebar
+      className="top-(--header-height) h-[calc(100svh-var(--header-height))]!"
+      {...props}
+    >
       <SidebarHeader>
-        <VersionSwitcher
-          versions={data.versions}
-          defaultVersion={data.versions[0]}
-        />
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg" asChild>
+              <a href="#">
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                  <AudioLines className="size-4" />
+                </div>
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-medium"> {TEXTS.APP_NAME} </span>
+                  <span className="truncate text-xs">Chat-bot as a Service</span>
+                </div>
+              </a>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+
+        {/* <Separator />
+        <SidebarMenu>
+          <ProjectSelector user={data.user} />
+        </SidebarMenu>
+        <Separator /> */}
+
       </SidebarHeader>
       <SidebarContent>
-        {/* We create a SidebarGroup for each parent. */}
-        {data.navMain.map((item) => (
-          <SidebarGroup key={item.title}>
-            <SidebarGroupLabel>{item.title}</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {item.items.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={item.isActive}>
-                      <a href={item.url}>{item.title}</a>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ))}
+
+        <CustomSidebarItem href={"/dashboard/getstarted"} title={"Get Started"} icon={BookOpen} />
+        
+
+        <NavMain items={data.general} label="General" />
+        <NavMain items={data.navMain} label="Project Configs" />
+        {/* <NavProjects projects={data.projects} /> */}
+        
       </SidebarContent>
-      <SidebarRail />
+      <SidebarFooter>
+        <NavSecondary items={data.navSecondary} />
+      </SidebarFooter>
     </Sidebar>
   )
 }
