@@ -28,3 +28,10 @@ export interface ToolFormValues {
   webhook_secret: string
   timeout_ms: number
 }
+
+export interface VoiceFormValues {
+  voice_enabled: boolean
+  voice_name: string
+  language_code: string
+  vad_mode: "manual" | "auto"
+}

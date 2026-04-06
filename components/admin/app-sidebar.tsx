@@ -70,7 +70,7 @@ const data = {
     },
     {
       title: "Voice Config",
-      url: "/dashboard/voice_config",
+      url: "/dashboard/voice-config",
       icon: MicVocal,
     },
   ],
