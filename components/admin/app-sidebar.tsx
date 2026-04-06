@@ -16,6 +16,7 @@ import {
   Send,
   Settings,
   Waves,
+  Wrench,
 } from "lucide-react"
 
 
@@ -59,13 +60,13 @@ const data = {
   navMain: [
     {
       title: "System Prompt",
-      url: "/dashboard/system_prompt",
+      url: "/dashboard/prompt",
       icon: MonitorCog,
     },
     {
       title: "Tools",
       url: "/dashboard/tools",
-      icon: Hammer,
+      icon: Wrench,
     },
     {
       title: "Voice Config",

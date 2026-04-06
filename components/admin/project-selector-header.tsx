@@ -20,7 +20,12 @@ export default function ProjectSelector() {
         <SelectGroup>
           {projects.map((project) => {
             return (
-              <SelectItem value={project.id} key={project.id}> {project.name} </SelectItem>
+              <SelectItem 
+                value={project.id} 
+                key={project.id}
+              > 
+                {project.name} 
+              </SelectItem>
             )
           })}
         </SelectGroup>
