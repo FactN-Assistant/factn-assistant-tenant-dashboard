@@ -5,7 +5,6 @@ import { AudioLines, GalleryVerticalEnd, GalleryVerticalEndIcon } from "lucide-r
 import FloatingLines from "@/components/user/decoration/FloatingLines"
 import { TEXTS } from "@/lib/constants";
 
-
 export default function Login() {
   return(
     <div className="grid min-h-svh lg:grid-cols-[1fr_2fr]">
