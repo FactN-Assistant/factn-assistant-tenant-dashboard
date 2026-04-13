@@ -1,9 +1,16 @@
+import { env } from "process";
+
 export const TEXTS = {
   APP_NAME: "FACTn Assistant", 
   APP_TAGLINE: "Skip the AI Ops. Just Build the Experience.",
   COMAPNY_NAME: "FACTn Software"
 }
 
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://backend:8000";
+export const API_VERSION = "v1";
+export const BACKEND = `${API_BASE_URL}/${API_VERSION}`
+
+export const ACCESS_TOKEN = "access_token"
 
 export const GEMINI_VOICES = [
   { name: "Zephyr",          tone: "Bright" },

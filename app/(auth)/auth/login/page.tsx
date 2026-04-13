@@ -15,7 +15,7 @@ export default function Login() {
               <AudioLines className="size-4" />
             </div>
               {TEXTS.APP_NAME}
-           </a>
+            </a>
         </div>
         <div className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-xs">

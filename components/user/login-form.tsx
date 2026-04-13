@@ -9,40 +9,96 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRef, useState } from "react"
+import { useAuth } from "@/hooks/useAuth"
+
+interface FormState {
+  email: string;
+  password: string;
+}
+
+interface FormErrors {
+  email?: string;
+  password?: string;
+  general?: string;
+}
+ 
+function validateLoginForm(values: FormState): FormErrors {
+  const errors: FormErrors = {};
+ 
+  if (!values.email.trim()) {
+    errors.email = "Email is required.";
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
+    errors.email = "Enter a valid email address.";
+  }
+ 
+  if (!values.password) {
+    errors.password = "Password is required.";
+  }
+ 
+  return errors;
+}
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"form">) {
-  const router = useRouter()
-  
-  const [formData, setFormData] = useState({
+  const { login } = useAuth();
+  const [formData, setFormData] = useState<FormState>({
     email: "",
     password: "",
   });
+  const [errors, setErrors] = useState<FormErrors>({})
   const [loading,  setLoading]  = useState(false)
+  const emailRef = useRef<HTMLInputElement>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
       setFormData((prev) => ({
         ...prev, [name]: value,
       }));
+      if (errors[name as keyof FormErrors]) {
+      setErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
   };
 
-  const onSubmit = () => {
-    console.log("Login")
-  }
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setErrors({});
+ 
+    const clientErrors = validateLoginForm(formData);
+    if (Object.keys(clientErrors).length > 0) {
+      setErrors(clientErrors);
+      return;
+    }
 
+    setLoading(true);
+
+    try {
+      await login({ email: formData.email, password: formData.password });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Login failed";
+ 
+      // Map specific error messages from FastAPI to UI-friendly text
+      if (message.includes("Too many login")) {
+        setErrors({ general: "Too many attempts. Please wait a minute." });
+      } else if (message.toLowerCase().includes("invalid")) {
+        setErrors({ general: "Invalid email or password." });
+      } else if (message.includes("422")) {
+        setErrors({ general: "Please check your input and try again." });
+      } else {
+        setErrors({ general: message });
+      }
+ 
+      setLoading(false);
+      emailRef.current?.focus();
+    }
+  }
 
   return (
     <form 
       className={cn("flex flex-col gap-6", className)} {...props}
-      onSubmit={e => { 
-        e.preventDefault(); 
-        onSubmit() 
-      }}
+      onSubmit={handleSubmit}
       {...props}
     >
       <FieldGroup>
@@ -89,10 +145,9 @@ export function LoginForm({
         </Field>
         <Field>
           <Button 
-            type="button" 
+            type="submit" 
             className="h-10" 
             size={"lg"} 
-            onClick={onSubmit}
             disabled={loading}
           >
             {loading ? "Signing in…" : "Login"}
