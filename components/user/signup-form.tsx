@@ -11,40 +11,137 @@ import {
 import { Input } from "@/components/ui/input"
 import { useState } from "react";
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/hooks/useAuth"
+
+interface FormState {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
+ 
+interface FormErrors {
+  name?: string;
+  email?: string;
+  password?: string;
+  confirmPassword?: string;
+  general?: string;
+}
+
+function validateRegisterForm(values: FormState): FormErrors {
+  const errors: FormErrors = {};
+ 
+  if (!values.name.trim()) {
+    errors.name = "Name is required.";
+  } else if (values.name.trim().length > 100) {
+    errors.name = "Name must be 100 characters or fewer.";
+  }
+ 
+  if (!values.email.trim()) {
+    errors.email = "Email is required.";
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
+    errors.email = "Enter a valid email address.";
+  }
+ 
+  if (!values.password) {
+    errors.password = "Password is required.";
+  } else if (values.password.length < 8) {
+    errors.password = "Password must be at least 8 characters.";
+  } else if (values.password.length > 128) {
+    errors.password = "Password must be 128 characters or fewer.";
+  }
+ 
+  if (!values.confirmPassword) {
+    errors.confirmPassword = "Please confirm your password.";
+  } else if (values.password !== values.confirmPassword) {
+    errors.confirmPassword = "Passwords do not match.";
+  }
+ 
+  return errors;
+}
+
+// ── Password strength indicator ─────────────────────────────────
+ 
+function getPasswordStrength(password: string): {
+  score: number;
+  label: string;
+  color: string;
+} {
+  if (!password) return { score: 0, label: "", color: "bg-gray-200" };
+  let score = 0;
+  if (password.length >= 8) score++;
+  if (password.length >= 12) score++;
+  if (/[A-Z]/.test(password)) score++;
+  if (/[0-9]/.test(password)) score++;
+  if (/[^A-Za-z0-9]/.test(password)) score++;
+ 
+  if (score <= 1) return { score, label: "Weak", color: "bg-red-400" };
+  if (score <= 3) return { score, label: "Fair", color: "bg-yellow-400" };
+  return { score, label: "Strong", color: "bg-green-400" };
+}
 
 export function SignupForm({
   className,
   ...props
 }: React.ComponentProps<"form">) {
-  const router = useRouter()
+  const { register } = useAuth()
   
-  const [formData, setFormData] = useState({
-    full_name: "",
+  const [formData, setFormData] = useState<FormState>({
+    name: "",
     email: "",
     password: "",
-    confirm_password: "",
+    confirmPassword: "",
   });
-
+  const [errors, setErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(false)
+  const pwStrength = getPasswordStrength(formData.password);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const { name, value } = e.target;
-      setFormData((prev) => ({
-        ...prev, [name]: value,
-      }));
-  };
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name as keyof FormErrors]) {
+      setErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
+  }
 
-  const onSubmit = () => {
-    console.log("Signup")
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setErrors({});
+ 
+    const clientErrors = validateRegisterForm(formData);
+    if (Object.keys(clientErrors).length > 0) {
+      setErrors(clientErrors);
+      return;
+    }
+ 
+    setLoading(true);
+ 
+    try {
+      await register({
+        name: formData.name.trim(),
+        email: formData.email.toLowerCase().trim(),
+        password: formData.password,
+      });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Registration failed";
+ 
+      if (message.includes("already exists") || message.includes("409")) {
+        // Map server-side duplicate email error back to the email field
+        setErrors({ email: "An account with this email already exists." });
+      } else if (message.includes("422")) {
+        setErrors({ general: "Please check your input. " + message });
+      } else {
+        setErrors({ general: message });
+      }
+ 
+      setLoading(false);
+    }
   }
 
   return (
     <form 
       className={cn("flex flex-col gap-6", className)} 
-      onSubmit={e => { 
-        e.preventDefault(); 
-        onSubmit() 
-      }}
+      onSubmit={handleSubmit}
       {...props}
     >
       <FieldGroup>
@@ -61,7 +158,7 @@ export function SignupForm({
             type="text"
             name="full_name"
             placeholder="John Doe"
-            value={formData.full_name}
+            value={formData.name}
             required
             disabled={loading}
             className="bg-background h-10"
@@ -107,7 +204,7 @@ export function SignupForm({
             id="confirm-password"
             type="password"
             name="confirm_password"
-            value={formData.confirm_password}
+            value={formData.confirmPassword}
             required
             disabled={loading}
             className="bg-background h-10"
@@ -117,10 +214,9 @@ export function SignupForm({
         </Field>
         <Field>
           <Button 
-            type="button" 
+            type="submit" 
             className="h-10" 
             size={"lg"} 
-            onClick={onSubmit}
             disabled={loading}
           >
             {loading ? "Creating account…" : "Create Account"}
