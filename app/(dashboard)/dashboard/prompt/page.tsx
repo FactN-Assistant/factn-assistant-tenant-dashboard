@@ -24,7 +24,8 @@ export default function PromptConfig() {
   const {
     register,
     handleSubmit,
-    setValue,
+    reset,
+    formState: { isDirty },
   } = useForm<FormInput>({
     defaultValues: {
       systemPrompt: ""
@@ -33,11 +34,12 @@ export default function PromptConfig() {
   
   // Load the system prompt from the selected project
   useEffect(() => {
-    if (selectedProject?.system_prompt) {
-      setValue("systemPrompt", selectedProject.system_prompt)
+    if (selectedProject) {
+      reset({
+        systemPrompt: selectedProject.system_prompt || ""
+      })
     }
-    console.log("selected project:", selectedProject)
-  }, [selectedProject, setValue])
+  }, [selectedProject, reset])
   
   const onSubmit: SubmitHandler<FormInput> = async (data) => {
     if (!selectedProject) {
@@ -102,7 +104,7 @@ export default function PromptConfig() {
         
         <Button 
           onClick={handleSubmit(onSubmit)} 
-          disabled={isSaving}
+          disabled={!isDirty || isSaving}
           className="gap-1.5 py-5 px-6 rounded-full bg-green-600 hover:bg-green-700 transition-colors text-neutral-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Save className="h-4 w-4" />

@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { useForm, Controller } from "react-hook-form"
+import { useState, useEffect } from "react"
+import { useForm, Controller, SubmitHandler } from "react-hook-form"
 import {
   Mic,
   MicOff,
@@ -37,11 +37,13 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { VoiceFormValues } from "@/lib/types"
 import { GEMINI_VOICES, SUPPORTED_LANGUAGES, TONE_COLORS } from "@/lib/constants"
+import { useProject } from "@/hooks/useProject"
+import { useFetch } from "@/hooks/useFetch"
 
 const DEFAULT_VALUES: VoiceFormValues = {
   voice_enabled: true,
   voice_name:    "Kore",
-  language_code: "en",
+  language_code: "en-US",
   vad_mode:      "manual",
 }
 
@@ -64,7 +66,10 @@ function FieldLabel({ label, tooltip }: { label: string; tooltip: string }) {
 }
 
 export default function VoiceConfig() {
-  const [saved, setSaved] = useState(false)
+  const { selectedProject, isLoadingDetail } = useProject()
+  const fetchWithAuth = useFetch()
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   const { control, handleSubmit, watch, reset, formState: { isDirty } } =
     useForm<VoiceFormValues>({ defaultValues: DEFAULT_VALUES })
@@ -73,24 +78,82 @@ export default function VoiceConfig() {
   const selectedVoice = watch("voice_name")
   const selectedVoiceTone = GEMINI_VOICES.find(v => v.name === selectedVoice)?.tone ?? ""
 
-  function onSubmit(data: VoiceFormValues) {
-    console.log("Saving voice config:", {
-      voice_config: {
-        enabled:       data.voice_enabled,
-        voice_name:    data.voice_name,
-        language_code: data.language_code,
-      },
-      vad_config: {
-        mode: data.vad_mode,
-      },
-    })
-    setSaved(true)
-    setTimeout(() => setSaved(false), 3000)
+  // ── Load voice config from selected project ────────────────
+  useEffect(() => {  
+    if (selectedProject) {
+      reset({
+        voice_enabled: selectedProject.voice_config.enabled,
+        voice_name: selectedProject.voice_config.voice_name,
+        language_code: selectedProject.voice_config.language_code,
+        vad_mode: selectedProject.vad_config.mode as "manual" | "auto",
+      })
+      setSaveMessage(null)
+    }
+  }, [selectedProject, reset])
+
+  const onSubmit: SubmitHandler<VoiceFormValues> = async (data: VoiceFormValues) => {
+    if (!selectedProject) {
+      setSaveMessage({ type: 'error', text: 'No project selected' })
+      return
+    }
+
+    setIsSaving(true)
+    setSaveMessage(null)
+
+    try {
+      // Ensure language_code is never empty to prevent validation errors
+      const languageCode = data.language_code?.trim() || "en-US"
+      
+      await fetchWithAuth(`/projects/${selectedProject.project_id}/voice-config`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          voice_name: data.voice_name,
+          language_code: languageCode,
+          enabled: data.voice_enabled,
+          vad_mode: data.vad_mode,
+        })
+      })
+
+      setSaveMessage({ type: 'success', text: 'Voice configuration saved successfully!' })
+      
+      // Auto-clear success message after 3 seconds
+      setTimeout(() => setSaveMessage(null), 3000)
+    } catch (error) {
+      setSaveMessage({ 
+        type: 'error', 
+        text: error instanceof Error ? error.message : 'Failed to save voice configuration' 
+      })
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   function handleReset() {
-    reset(DEFAULT_VALUES)
-    setSaved(false)
+    if (selectedProject) {
+      reset({
+        voice_enabled: selectedProject.voice_config.enabled,
+        voice_name: selectedProject.voice_config.voice_name,
+        language_code: selectedProject.voice_config.language_code,
+        vad_mode: selectedProject.vad_config.mode as "manual" | "auto",
+      })
+    }
+    setSaveMessage(null)
+  }
+
+  if (isLoadingDetail) {
+    return (
+      <div className="m-10">
+        <div className="text-center text-muted-foreground">Loading project...</div>
+      </div>
+    )
+  }
+
+  if (!selectedProject) {
+    return (
+      <div className="m-10">
+        <div className="text-center text-muted-foreground">No project selected</div>
+      </div>
+    )
   }
 
   return (
@@ -107,6 +170,16 @@ export default function VoiceConfig() {
           </p>
         </div>
       </div>
+
+      {saveMessage && (
+        <div className={`mb-4 p-3 rounded-lg text-sm ${
+          saveMessage.type === 'success' 
+            ? 'bg-green-900/30 text-green-300 border border-green-800' 
+            : 'bg-red-900/30 text-red-300 border border-red-800'
+        }`}>
+          {saveMessage.text}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
 
@@ -139,6 +212,7 @@ export default function VoiceConfig() {
                     checked={field.value}
                     onCheckedChange={field.onChange}
                     aria-label="Enable voice output"
+                    disabled={isSaving}
                   />
                 )}
               />
@@ -157,7 +231,7 @@ export default function VoiceConfig() {
                   control={control}
                   name="voice_name"
                   render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange} disabled={!voiceEnabled}>
+                    <Select value={field.value} onValueChange={field.onChange} disabled={!voiceEnabled || isSaving}>
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select a voice…" />
                       </SelectTrigger>
@@ -204,7 +278,7 @@ export default function VoiceConfig() {
                   control={control}
                   name="language_code"
                   render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange} disabled={!voiceEnabled}>
+                    <Select value={field.value} onValueChange={field.onChange} disabled={!voiceEnabled || isSaving}>
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select a language…" />
                       </SelectTrigger>
@@ -262,7 +336,8 @@ export default function VoiceConfig() {
                   <button
                     type="button"
                     onClick={() => field.onChange("manual")}
-                    className={`relative flex flex-col gap-1.5 rounded-lg border p-4 text-left transition-all hover:bg-muted/40 ${
+                    disabled={isSaving}
+                    className={`relative flex flex-col gap-1.5 rounded-lg border p-4 text-left transition-all hover:bg-muted/40 disabled:opacity-50 disabled:cursor-not-allowed ${
                       field.value === "manual"
                         ? "border-primary bg-primary/5 ring-1 ring-primary"
                         : "border-border"
@@ -288,7 +363,8 @@ export default function VoiceConfig() {
                   <button
                     type="button"
                     onClick={() => field.onChange("auto")}
-                    className={`relative flex flex-col gap-1.5 rounded-lg border p-4 text-left transition-all hover:bg-muted/40 ${
+                    disabled={isSaving}
+                    className={`relative flex flex-col gap-1.5 rounded-lg border p-4 text-left transition-all hover:bg-muted/40 disabled:opacity-50 disabled:cursor-not-allowed ${
                       field.value === "auto"
                         ? "border-primary bg-primary/5 ring-1 ring-primary"
                         : "border-border"
@@ -345,7 +421,7 @@ export default function VoiceConfig() {
         </Card>
 
         {/* Saved alert */}
-        {saved && (
+        {saveMessage?.type === 'success' && (
           <Alert className="border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-900">
             <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
             <AlertDescription className="text-green-700 dark:text-green-400 text-sm">
@@ -363,14 +439,14 @@ export default function VoiceConfig() {
             size="sm"
             className="gap-1.5 text-muted-foreground"
             onClick={handleReset}
-            disabled={!isDirty}
+            disabled={!isDirty || isSaving}
           >
             <RotateCcw className="h-3.5 w-3.5" />
             Reset to defaults
           </Button>
-          <Button type="submit" size="sm" className="gap-1.5" disabled={!isDirty}>
+          <Button type="submit" size="sm" className="gap-1.5" disabled={!isDirty || isSaving}>
             <Save className="h-3.5 w-3.5" />
-            Save changes
+            {isSaving ? 'Saving...' : 'Save changes'}
           </Button>
         </div>
 
