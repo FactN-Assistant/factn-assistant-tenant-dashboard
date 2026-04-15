@@ -49,7 +49,6 @@ export function useProject() {
       setError(null);
       try {
         const detail = await fetchWithAuth<Project>(`${BASE}/${projectId}`);
-        //console.log("proje details: ", detail);
         setSelectedProject(detail);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load project");
@@ -63,7 +62,6 @@ export function useProject() {
   // ── Fetch the project list on mount (once per session) ────
 
   useEffect(() => {
-    console.log("test")
     if (!user) {
       clear();
       return;
@@ -76,7 +74,6 @@ export function useProject() {
       setError(null);
       try {
         const list = await fetchWithAuth<Project[]>(BASE);
-        console.log("list: ", list)
         setProjects(list);
 
         // Auto-select: keep current selection if still valid, else pick first
