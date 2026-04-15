@@ -1,35 +1,61 @@
-import { useState } from "react"
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
+"use client";
 
-const projects = [
-  {id: "12345", name: "MyDrive"},
-  {id: "23456", name: "Sensio"},
-  {id: "34567", name: "Custom 1"},
-  {id: "45678", name: "Custom 2"},
-]
+import { useProject } from "@/hooks/useProject";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
+import { Skeleton } from "../ui/skeleton";
+import { useEffect } from "react";
 
 export default function ProjectSelector() {
-  const [selectedProject, setSelectedProject] = useState(projects[0].id)
+  const { projects, selectedProject, isLoadingList, selectProject } = useProject();
+
+  // ── Log loading state changes (called unconditionally at top level) ────
+  useEffect(() => {
+    console.log("loading: ", isLoadingList)
+  }, [isLoadingList])
+
+  // ── Loading skeleton ───────────────────────────────────────
+  if (isLoadingList) {
+    return <Skeleton className="h-8 w-36 rounded-full" />;
+  }
+
+  console.log("projects: ", projects) 
+  
+  // ── No projects yet ────────────────────────────────────────
+  if (projects.length === 0) {
+    return (
+      <span className="text-sm text-muted-foreground px-2">
+        No projects
+      </span>
+    );
+  }
 
   return (
-    <Select defaultValue={selectedProject} onValueChange={setSelectedProject}>
+    <Select
+      value={selectedProject?.project_id ?? ""}
+      onValueChange={(id) => selectProject(id)}
+    >
       <SelectTrigger className="px-4 rounded-full">
-        <SelectValue />
+        <SelectValue placeholder="Select a project" />
       </SelectTrigger>
       <SelectContent>
         <SelectGroup>
-          {projects.map((project) => {
-            return (
-              <SelectItem 
-                value={project.id} 
-                key={project.id}
-              > 
-                {project.name} 
-              </SelectItem>
-            )
-          })}
+          {projects.map((project) => (
+            <SelectItem
+              value={project.project_id}
+              key={project.project_id}
+            >
+              {project.name}
+            </SelectItem>
+          ))}
         </SelectGroup>
       </SelectContent>
     </Select>
-  )
+  );
 }
