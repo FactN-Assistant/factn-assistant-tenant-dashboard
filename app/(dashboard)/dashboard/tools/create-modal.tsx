@@ -1,6 +1,5 @@
 import ToolForm from "@/components/admin/tool-form";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { ToolFormValues } from "@/lib/types";
 import { Plus } from "lucide-react";
@@ -9,6 +8,7 @@ interface Props {
   isOpen: boolean,
   onOpenChange: () => void,
   onSave: (data: ToolFormValues) => void,
+  isSubmitting?: boolean,
 }
 
 export default function CreateToolModal(props: Props) {
@@ -30,6 +30,7 @@ export default function CreateToolModal(props: Props) {
         <ToolForm
           onSave={props.onSave}
           onOpenChange={props.onOpenChange}
+          isSubmitting={props.isSubmitting}
         />
 
       </DialogContent>
