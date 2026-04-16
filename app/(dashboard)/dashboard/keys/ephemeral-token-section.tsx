@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { ApiKey, MintedToken, MintTokenForm } from "@/lib/types"
-import { CheckCircle2, ChevronDown, Globe, Info, Key, RefreshCw, Server, Zap } from "lucide-react"
+import { mintEphemeralToken, rotateEphemeralToken } from "@/lib/keysApi"
+import { CheckCircle2, ChevronDown, Globe, Info, Key, RefreshCw, Server, Zap, AlertCircle, Eye, EyeOff } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 
@@ -16,7 +17,11 @@ export default function EphemeralTokenSection({ keys }: { keys: ApiKey[] }) {
   const [open, setOpen] = useState(false)
   const [mintedToken, setMintedToken] = useState<MintedToken | null>(null)
   const [minting, setMinting] = useState(false)
+  const [rotating, setRotating] = useState(false)
   const [selectedKeyId, setSelectedKeyId] = useState<string>("")
+  const [secretKeyInput, setSecretKeyInput] = useState("")
+  const [showSecretKey, setShowSecretKey] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const { register, handleSubmit, reset } = useForm<MintTokenForm>({
     defaultValues: { ttl_seconds: 60, metadata_raw: "" },
@@ -25,9 +30,13 @@ export default function EphemeralTokenSection({ keys }: { keys: ApiKey[] }) {
   const secretKeys = keys.filter(k => k.key_type === "secret" && !k.revoked)
   const selectedKey = keys.find(k => k.key_id === selectedKeyId)
 
-  function onMint(data: MintTokenForm) {
-    if (!selectedKeyId) return
+  async function onMint(data: MintTokenForm) {
+    if (!selectedKeyId || !secretKeyInput.trim()) {
+      setError("Please provide a secret key")
+      return
+    }
     setMinting(true)
+    setError(null)
 
     // Parse metadata lines: "key=value" per line
     const metadata: Record<string, string> = {}
@@ -36,24 +45,42 @@ export default function EphemeralTokenSection({ keys }: { keys: ApiKey[] }) {
       if (k?.trim()) metadata[k.trim()] = rest.join("=").trim()
     })
 
-    // Mock response — replace with actual fetch
-    setTimeout(() => {
-      const expiresAt = Math.floor(Date.now() / 1000) + data.ttl_seconds
-      setMintedToken({
-        ephemeral_token: `eph_live_${Math.random().toString(36).slice(2, 34)}`,
-        expires_at:      expiresAt,
-        ttl_seconds:     data.ttl_seconds,
-        project_id:      "proj_demo",
+    try {
+      const response = await mintEphemeralToken(secretKeyInput.trim(), {
+        ttl_seconds: data.ttl_seconds,
+        metadata,
       })
+      setMintedToken(response)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to mint token"
+      setError(message)
+      console.error("Error minting token:", err)
+    } finally {
       setMinting(false)
-    }, 600)
+    }
+  }
 
-    console.log("Minting token with:", {
-      secret_key_id:  selectedKeyId,
-      ttl_seconds:    data.ttl_seconds,
-      metadata,
-      // POST /v1/tokens with Authorization: Bearer <sk_live_...>
-    })
+  async function onRotate() {
+    if (!secretKeyInput.trim() || !mintedToken) {
+      setError("Please provide a secret key")
+      return
+    }
+    setRotating(true)
+    setError(null)
+
+    try {
+      const response = await rotateEphemeralToken(secretKeyInput.trim(), {
+        current_token: mintedToken.ephemeral_token,
+        ttl_seconds: mintedToken.ttl_seconds,
+      })
+      setMintedToken(response)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to rotate token"
+      setError(message)
+      console.error("Error rotating token:", err)
+    } finally {
+      setRotating(false)
+    }
   }
 
   function clearToken() {
@@ -87,6 +114,14 @@ export default function EphemeralTokenSection({ keys }: { keys: ApiKey[] }) {
           <CardContent className="pt-0 space-y-5">
             <Separator />
 
+            {/* Error Alert */}
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
             {/* How it works */}
             <div className="space-y-2">
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">How it works</p>
@@ -110,8 +145,8 @@ export default function EphemeralTokenSection({ keys }: { keys: ApiKey[] }) {
                 <Info className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
                 <p className="text-xs text-blue-700 dark:text-blue-300">
                   Ephemeral tokens ensure your <strong>secret keys never reach the browser</strong>.
-                  They are replayable — a second connection attempt with the same token is rejected with close code 4005.
-                  You can rotate a token before it expires using <code className="text-[10px] bg-blue-100 dark:bg-blue-900 px-1 rounded">POST /v1/tokens/rotate</code>.
+                  They are single-use — a second connection attempt with the same token is rejected with close code 4005.
+                  You can rotate a token before it expires using the rotate button.
                 </p>
               </div>
             </div>
@@ -132,27 +167,27 @@ export default function EphemeralTokenSection({ keys }: { keys: ApiKey[] }) {
                 </div>
               ) : (
                 <form onSubmit={handleSubmit(onMint)} className="space-y-4">
-                  {/* Secret key selector */}
+                  {/* Secret key input */}
                   <div className="space-y-1.5">
-                    <Label className="text-sm">Secret key to sign with</Label>
-                    <Select value={selectedKeyId} onValueChange={setSelectedKeyId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a secret key…" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {secretKeys.map(k => (
-                          <SelectItem key={k.key_id} value={k.key_id}>
-                            <div className="flex items-center gap-2">
-                              <span className="font-mono text-xs">{k.key_prefix}••••</span>
-                              <span className="text-xs text-muted-foreground">— {k.label}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Label className="text-sm">Your secret key</Label>
+                    <div className="relative">
+                      <Input
+                        type={showSecretKey ? "text" : "password"}
+                        placeholder="sk_live_..."
+                        value={secretKeyInput}
+                        onChange={(e) => setSecretKeyInput(e.target.value)}
+                        className="font-mono text-xs pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowSecretKey(!showSecretKey)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showSecretKey ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                      </button>
+                    </div>
                     <p className="text-xs text-muted-foreground">
-                      The selected key is passed as <code className="text-[10px] bg-muted px-1 rounded">Authorization: Bearer sk_live_...</code>.
-                      It never leaves your server.
+                      Paste the secret key you created above. It's used only to authenticate this request and is never stored.
                     </p>
                   </div>
 
@@ -173,7 +208,7 @@ export default function EphemeralTokenSection({ keys }: { keys: ApiKey[] }) {
                     <div className="space-y-1.5">
                       <Label className="text-sm">Metadata (optional)</Label>
                       <textarea
-                        className="w-full rounded-md border bg-background px-3 py-2 text-xs font-mono resize-none min-h-[62px] focus:outline-none focus:ring-1 focus:ring-ring"
+                        className="w-full rounded-md border bg-background px-3 py-2 text-xs font-mono resize-none min-h-15.5 focus:outline-none focus:ring-1 focus:ring-ring"
                         placeholder={"user_id=u_123\nlocale=en"}
                         {...register("metadata_raw")}
                       />
@@ -182,7 +217,7 @@ export default function EphemeralTokenSection({ keys }: { keys: ApiKey[] }) {
                   </div>
 
                   <div className="flex justify-end">
-                    <Button type="submit" size="sm" className="gap-1.5" disabled={!selectedKeyId || minting}>
+                    <Button type="submit" size="sm" className="gap-1.5" disabled={minting || !secretKeyInput.trim()}>
                       {minting
                         ? <><RefreshCw className="h-3.5 w-3.5 animate-spin" /> Minting…</>
                         : <><Zap className="h-3.5 w-3.5" /> Mint token</>
@@ -246,6 +281,15 @@ export default function EphemeralTokenSection({ keys }: { keys: ApiKey[] }) {
                       <code className="text-xs break-all">
                         wss://host/v1/chat?token={mintedToken.ephemeral_token}
                       </code>
+                    </div>
+
+                    <div className="flex justify-end">
+                      <Button size="sm" variant="outline" className="gap-1.5" onClick={onRotate} disabled={rotating || !secretKeyInput.trim()}>
+                        {rotating
+                          ? <><RefreshCw className="h-3.5 w-3.5 animate-spin" /> Rotating…</>
+                          : <><RefreshCw className="h-3.5 w-3.5" /> Rotate token</>
+                        }
+                      </Button>
                     </div>
                   </div>
                 </div>

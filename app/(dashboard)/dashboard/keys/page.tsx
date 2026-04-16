@@ -1,78 +1,31 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import {
   Key,
   Plus,
-  Trash2,
-  Copy,
-  Check,
-  Eye,
-  EyeOff,
-  ShieldCheck,
-  Clock,
-  AlertTriangle,
-  RefreshCw,
-  Zap,
-  Server,
-  Globe,
+  AlertCircle,
   ChevronDown,
-  Info,
-  CheckCircle2,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
+import { Separator } from "@/components/ui/separator"
 import { ApiKey, CreatedKey, CreateKeyForm, MintedToken, MintTokenForm } from "@/lib/types"
-import { MOCK_KEYS } from "@/lib/mock-data"
+import { createApiKey, listApiKeys, revokeApiKey } from "@/lib/keysApi"
 import KeyRow from "@/components/admin/key-row"
 import CreateKeyModal from "./create-key-modal"
 import KeyRevealModal from "./key-reveal-modal"
 import RevokeDialog from "./revoke-dialog"
-import CopyButton from "@/components/copy-button"
 import EphemeralTokenSection from "./ephemeral-token-section"
+import { useProject } from "@/hooks/useProject"
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -99,58 +52,130 @@ import EphemeralTokenSection from "./ephemeral-token-section"
 // ── Page ──────────────────────────────────────────────────────
 
 export default function ApiKeys() {
-  const [keys, setKeys] = useState<ApiKey[]>(MOCK_KEYS)
-  const [showCreate, setShowCreate]     = useState(false)
-  const [createdKey, setCreatedKey]     = useState<CreatedKey | null>(null)
+  const { selectedProject } = useProject()
+  const [keys, setKeys] = useState<ApiKey[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [showCreate, setShowCreate] = useState(false)
+  const [createdKey, setCreatedKey] = useState<CreatedKey | null>(null)
   const [revokeTarget, setRevokeTarget] = useState<ApiKey | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const activeKeys  = keys.filter(k => !k.revoked)
-  const revokedKeys = keys.filter(k =>  k.revoked)
-
-  function handleCreate(data: CreateKeyForm) {
-    // Replace with: POST /v1/projects/{id}/keys
-    const mockRawKey = `${data.key_type === "publishable" ? "pk" : "sk"}_live_${Math.random().toString(36).slice(2, 14)}${Math.random().toString(36).slice(2, 22)}`
-    const prefix = mockRawKey.slice(0, 12)
-
-    const newKey: ApiKey = {
-      key_id:         crypto.randomUUID(),
-      key_prefix:     prefix,
-      key_type:       data.key_type,
-      label:          data.label,
-      rate_limit_rpm: data.rate_limit_rpm,
-      revoked:        false,
-      created_at:     new Date().toISOString(),
-      last_used_at:   null,
+  // ── Fetch keys on project selection ──────────────────────────
+  useEffect(() => {
+    if (!selectedProject?.project_id) {
+      setKeys([])
+      return
     }
 
-    const revealed: CreatedKey = {
-      key_id:         newKey.key_id,
-      raw_key:        mockRawKey,
-      key_prefix:     prefix,
-      key_type:       data.key_type,
-      label:          data.label,
-      rate_limit_rpm: data.rate_limit_rpm,
-      created_at:     newKey.created_at,
+    const loadKeys = async () => {
+      setIsLoading(true)
+      setError(null)
+      try {
+        const data = await listApiKeys(selectedProject.project_id)
+        setKeys(data)
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Failed to load API keys"
+        setError(message)
+        console.error("Error fetching keys:", err)
+      } finally {
+        setIsLoading(false)
+      }
     }
 
-    setKeys(prev => [newKey, ...prev])
-    setShowCreate(false)
-    setCreatedKey(revealed)
+    loadKeys()
+  }, [selectedProject?.project_id])
 
-    console.log("Key created:", { key_id: newKey.key_id, prefix, type: data.key_type })
+  const activeKeys = keys.filter(k => !k.revoked)
+  const revokedKeys = keys.filter(k => k.revoked)
+
+  // ── Handle create key ────────────────────────────────────────
+  async function handleCreate(data: CreateKeyForm) {
+    if (!selectedProject?.project_id) {
+      setError("No project selected")
+      return
+    }
+
+    setIsSubmitting(true)
+    setError(null)
+    try {
+      const response = await createApiKey(selectedProject.project_id, {
+        label: data.label,
+        key_type: data.key_type,
+        rate_limit_rpm: data.rate_limit_rpm,
+      })
+
+      // Add the new key to the list (without raw key)
+      const newKey: ApiKey = {
+        key_id: response.key_id,
+        key_prefix: response.key_prefix,
+        key_type: response.key_type,
+        label: response.label,
+        rate_limit_rpm: response.rate_limit_rpm,
+        revoked: false,
+        created_at: response.created_at,
+        last_used_at: null,
+      }
+
+      // Create the revealed key object (with raw key)
+      const revealed: CreatedKey = {
+        key_id: response.key_id,
+        raw_key: response.raw_key,
+        key_prefix: response.key_prefix,
+        key_type: response.key_type,
+        label: response.label,
+        rate_limit_rpm: response.rate_limit_rpm,
+        created_at: response.created_at,
+      }
+
+      setKeys((prev) => [newKey, ...prev])
+      setShowCreate(false)
+      setCreatedKey(revealed)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to create key"
+      setError(message)
+      console.error("Error creating key:", err)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  function handleRevoke(key: ApiKey) {
-    // Replace with: DELETE /v1/projects/{id}/keys/{key_id}
-    setKeys(prev => prev.map(k =>
-      k.key_id === key.key_id ? { ...k, revoked: true } : k
-    ))
-    setRevokeTarget(null)
-    console.log("Key revoked:", key.key_id)
+  // ── Handle revoke key ────────────────────────────────────────
+  async function handleRevoke(key: ApiKey) {
+    if (!selectedProject?.project_id) {
+      setError("No project selected")
+      return
+    }
+
+    setIsSubmitting(true)
+    setError(null)
+    try {
+      await revokeApiKey(selectedProject.project_id, key.key_id)
+      setKeys((prev) =>
+        prev.map((k) =>
+          k.key_id === key.key_id ? { ...k, revoked: true } : k
+        )
+      )
+      setRevokeTarget(null)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to revoke key"
+      setError(message)
+      console.error("Error revoking key:", err)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
     <div className="m-10 max-w-3xl space-y-4">
+      {/* Error Alert */}
+      {error && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -162,42 +187,71 @@ export default function ApiKeys() {
             {activeKeys.length} active key{activeKeys.length !== 1 ? "s" : ""} for this project
           </p>
         </div>
-        <Button size="sm" className="gap-1.5" onClick={() => setShowCreate(true)}>
+        <Button
+          size="sm"
+          className="gap-1.5"
+          onClick={() => setShowCreate(true)}
+          disabled={!selectedProject || isSubmitting}
+        >
           <Plus className="h-4 w-4" />
           New key
         </Button>
       </div>
 
+      {/* Loading state */}
+      {isLoading && (
+        <Card>
+          <CardContent className="py-10 text-center">
+            <div className="text-sm text-muted-foreground">Loading API keys...</div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Active keys */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Active keys</CardTitle>
-          <CardDescription className="text-xs">
-            Keys are shown by prefix only — the full key was displayed once at creation.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {activeKeys.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-10 text-center">
-              <Key className="h-7 w-7 text-muted-foreground/40 mb-2" />
-              <p className="text-sm text-muted-foreground">No active keys</p>
-              <Button variant="outline" size="sm" className="mt-3 gap-1.5" onClick={() => setShowCreate(true)}>
-                <Plus className="h-3.5 w-3.5" /> Create your first key
-              </Button>
-            </div>
-          ) : (
-            activeKeys.map(key => (
-              <KeyRow key={key.key_id} apiKey={key} onRevoke={() => setRevokeTarget(key)} />
-            ))
-          )}
-        </CardContent>
-      </Card>
+      {!isLoading && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Active keys</CardTitle>
+            <CardDescription className="text-xs">
+              Keys are shown by prefix only — the full key was displayed once at creation.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {activeKeys.length === 0 ? (
+              <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-10 text-center">
+                <Key className="h-7 w-7 text-muted-foreground/40 mb-2" />
+                <p className="text-sm text-muted-foreground">No active keys</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-3 gap-1.5"
+                  onClick={() => setShowCreate(true)}
+                  disabled={!selectedProject || isSubmitting}
+                >
+                  <Plus className="h-3.5 w-3.5" /> Create your first key
+                </Button>
+              </div>
+            ) : (
+              activeKeys.map((key) => (
+                <KeyRow
+                  key={key.key_id}
+                  apiKey={key}
+                  onRevoke={() => setRevokeTarget(key)}
+                  isRevoking={isSubmitting}
+                />
+              ))
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Ephemeral tokens */}
-      <EphemeralTokenSection keys={keys} />
+      {!isLoading && (
+        <EphemeralTokenSection keys={keys} />
+      )}
 
       {/* Revoked keys (collapsible) */}
-      {revokedKeys.length > 0 && (
+      {!isLoading && revokedKeys.length > 0 && (
         <Card>
           <Collapsible>
             <CollapsibleTrigger asChild>
@@ -218,7 +272,7 @@ export default function ApiKeys() {
             <CollapsibleContent>
               <CardContent className="pt-0 space-y-2">
                 <Separator className="mb-3" />
-                {revokedKeys.map(key => (
+                {revokedKeys.map((key) => (
                   <KeyRow key={key.key_id} apiKey={key} onRevoke={() => {}} />
                 ))}
               </CardContent>
@@ -232,6 +286,7 @@ export default function ApiKeys() {
         <CreateKeyModal
           onCreate={handleCreate}
           onCancel={() => setShowCreate(false)}
+          isSubmitting={isSubmitting}
         />
       )}
 

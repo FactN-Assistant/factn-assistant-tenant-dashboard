@@ -11,9 +11,11 @@ import { useForm } from "react-hook-form"
 export default function CreateKeyModal({
   onCreate,
   onCancel,
+  isSubmitting = false,
 }: {
   onCreate: (data: CreateKeyForm) => void
   onCancel: () => void
+  isSubmitting?: boolean
 }) {
   const { register, handleSubmit, setValue, watch } = useForm<CreateKeyForm>({
     defaultValues: { label: "", key_type: "publishable", rate_limit_rpm: 60 },
@@ -99,8 +101,10 @@ export default function CreateKeyModal({
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
-            <Button type="submit">Create key</Button>
+            <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>Cancel</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Creating..." : "Create key"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

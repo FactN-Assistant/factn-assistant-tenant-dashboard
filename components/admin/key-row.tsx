@@ -1,12 +1,20 @@
 import { ApiKey } from "@/lib/types";
-import { Clock, Key, Trash2 } from "lucide-react";
+import { Clock, Key, Trash2, Loader2 } from "lucide-react";
 import KeyTypeBadge from "./key-type-badge";
 import { Badge } from "../ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
 import { formatDate, timeAgo } from "@/lib/utils";
 import { Button } from "../ui/button";
 
-export default function KeyRow({ apiKey, onRevoke }: { apiKey: ApiKey; onRevoke: () => void }) {
+export default function KeyRow({ 
+  apiKey, 
+  onRevoke,
+  isRevoking = false,
+}: { 
+  apiKey: ApiKey
+  onRevoke: () => void
+  isRevoking?: boolean
+}) {
   return (
     <div className={`flex items-center justify-between px-4 py-3.5 rounded-lg border transition-colors ${
       apiKey.revoked ? "bg-muted/30 opacity-60" : "bg-card hover:bg-muted/30"
@@ -58,8 +66,13 @@ export default function KeyRow({ apiKey, onRevoke }: { apiKey: ApiKey; onRevoke:
           size="icon"
           className="h-8 w-8 shrink-0 ml-2 text-muted-foreground hover:text-destructive"
           onClick={onRevoke}
+          disabled={isRevoking}
         >
-          <Trash2 className="h-3.5 w-3.5" />
+          {isRevoking ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Trash2 className="h-3.5 w-3.5" />
+          )}
         </Button>
       )}
     </div>
