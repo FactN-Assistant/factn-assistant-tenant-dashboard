@@ -2,24 +2,27 @@
 
 import { MonitorCog, Save } from "lucide-react"
 import { useForm, SubmitHandler } from "react-hook-form"
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent } from "@/components/ui/card"
 import { useProject } from "@/hooks/useProject"
-import { useFetch } from "@/hooks/useFetch"
 
 interface FormInput {
   systemPrompt: string
 }
 
 export default function PromptConfig() {
-  const { selectedProject, isLoadingDetail } = useProject()
-  const fetchWithAuth = useFetch()
-  const [isSaving, setIsSaving] = useState(false)
-  const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const { selectedProject, isLoadingDetail, updateSystemPromptMutation } = useProject()
+  const isSaving = updateSystemPromptMutation.isPending
+
+  const saveMessage = updateSystemPromptMutation.isSuccess
+    ? { type: 'success' as const, text: 'System prompt saved successfully!' }
+    : updateSystemPromptMutation.isError
+    ? { type: 'error' as const, text: updateSystemPromptMutation.error?.message ?? 'Failed to save system prompt' }
+    : null
 
   const {
     register,
@@ -40,36 +43,18 @@ export default function PromptConfig() {
       })
     }
   }, [selectedProject, reset])
+
+  // Auto-clear success message after 3 seconds
+  useEffect(() => {
+    if (updateSystemPromptMutation.isSuccess) {
+      const timer = setTimeout(() => updateSystemPromptMutation.reset(), 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [updateSystemPromptMutation.isSuccess, updateSystemPromptMutation])
   
-  const onSubmit: SubmitHandler<FormInput> = async (data) => {
-    if (!selectedProject) {
-      setSaveMessage({ type: 'error', text: 'No project selected' })
-      return
-    }
-
-    setIsSaving(true)
-    setSaveMessage(null)
-
-    try {
-      await fetchWithAuth(`/projects/${selectedProject.project_id}/system-prompt`, {
-        method: 'PUT',
-        body: JSON.stringify({
-          system_prompt: data.systemPrompt
-        })
-      })
-
-      setSaveMessage({ type: 'success', text: 'System prompt saved successfully!' })
-      
-      // Auto-clear success message after 3 seconds
-      setTimeout(() => setSaveMessage(null), 3000)
-    } catch (error) {
-      setSaveMessage({ 
-        type: 'error', 
-        text: error instanceof Error ? error.message : 'Failed to save system prompt' 
-      })
-    } finally {
-      setIsSaving(false)
-    }
+  const onSubmit: SubmitHandler<FormInput> = (data) => {
+    if (!selectedProject) return
+    updateSystemPromptMutation.mutate(data.systemPrompt)
   }
 
   if (isLoadingDetail) {

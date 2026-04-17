@@ -16,8 +16,9 @@
 "use client";
 
 import { useCallback } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "./useAuth";
+import { useFetch } from "./useFetch";
 import { projectSchema, type Project } from "@/lib/schemas/project-schemas";
 import { z } from "zod";
 
@@ -37,6 +38,7 @@ const PROJECT_DETAIL_KEY = ["projects", "detail"];
 export function useProject() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const fetchWithRefresh = useFetch();
 
   // ── 1. Fetch project list ──────────────────────────────────
 
@@ -110,6 +112,39 @@ export function useProject() {
     [queryClient]
   );
 
+  // ── 5. Update system prompt mutation ───────────────────────
+
+  const updateSystemPromptMutation = useMutation({
+    mutationFn: async (systemPrompt: string) => {
+      await fetchWithRefresh(`/projects/${effectiveSelectedId}/system-prompt`, {
+        method: "PUT",
+        body: JSON.stringify({ system_prompt: systemPrompt }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...PROJECT_DETAIL_KEY, effectiveSelectedId] });
+    },
+  });
+
+  // ── 6. Update voice config mutation ────────────────────────
+
+  const updateVoiceConfigMutation = useMutation({
+    mutationFn: async (config: {
+      voice_name: string;
+      language_code: string;
+      enabled: boolean;
+      vad_mode: string;
+    }) => {
+      await fetchWithRefresh(`/projects/${effectiveSelectedId}/voice-config`, {
+        method: "PUT",
+        body: JSON.stringify(config),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...PROJECT_DETAIL_KEY, effectiveSelectedId] });
+    },
+  });
+
   // ── Combine errors ────────────────────────────────────────
 
   const error = listError || detailError
@@ -123,5 +158,7 @@ export function useProject() {
     isLoadingDetail,
     error,
     selectProject,
+    updateSystemPromptMutation,
+    updateVoiceConfigMutation,
   };
 }

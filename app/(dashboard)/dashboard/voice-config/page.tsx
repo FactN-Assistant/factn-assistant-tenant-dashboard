@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect } from "react"
 import { useForm, Controller, SubmitHandler } from "react-hook-form"
 import {
   Mic,
@@ -38,7 +38,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { VoiceFormValues } from "@/lib/types"
 import { GEMINI_VOICES, SUPPORTED_LANGUAGES, TONE_COLORS } from "@/lib/constants"
 import { useProject } from "@/hooks/useProject"
-import { useFetch } from "@/hooks/useFetch"
 
 const DEFAULT_VALUES: VoiceFormValues = {
   voice_enabled: true,
@@ -66,10 +65,14 @@ function FieldLabel({ label, tooltip }: { label: string; tooltip: string }) {
 }
 
 export default function VoiceConfig() {
-  const { selectedProject, isLoadingDetail } = useProject()
-  const fetchWithAuth = useFetch()
-  const [isSaving, setIsSaving] = useState(false)
-  const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const { selectedProject, isLoadingDetail, updateVoiceConfigMutation } = useProject()
+  const isSaving = updateVoiceConfigMutation.isPending
+
+  const saveMessage = updateVoiceConfigMutation.isSuccess
+    ? { type: 'success' as const, text: 'Voice configuration saved successfully!' }
+    : updateVoiceConfigMutation.isError
+    ? { type: 'error' as const, text: updateVoiceConfigMutation.error?.message ?? 'Failed to save voice configuration' }
+    : null
 
   const { control, handleSubmit, watch, reset, formState: { isDirty } } =
     useForm<VoiceFormValues>({ defaultValues: DEFAULT_VALUES })
@@ -87,45 +90,29 @@ export default function VoiceConfig() {
         language_code: selectedProject.voice_config.language_code,
         vad_mode: selectedProject.vad_config.mode as "manual" | "auto",
       })
-      setSaveMessage(null)
+      updateVoiceConfigMutation.reset()
     }
   }, [selectedProject, reset])
 
-  const onSubmit: SubmitHandler<VoiceFormValues> = async (data: VoiceFormValues) => {
-    if (!selectedProject) {
-      setSaveMessage({ type: 'error', text: 'No project selected' })
-      return
+  // Auto-clear success message after 3 seconds
+  useEffect(() => {
+    if (updateVoiceConfigMutation.isSuccess) {
+      const timer = setTimeout(() => updateVoiceConfigMutation.reset(), 3000)
+      return () => clearTimeout(timer)
     }
+  }, [updateVoiceConfigMutation.isSuccess, updateVoiceConfigMutation])
 
-    setIsSaving(true)
-    setSaveMessage(null)
+  const onSubmit: SubmitHandler<VoiceFormValues> = (data: VoiceFormValues) => {
+    if (!selectedProject) return
 
-    try {
-      // Ensure language_code is never empty to prevent validation errors
-      const languageCode = data.language_code?.trim() || "en-US"
-      
-      await fetchWithAuth(`/projects/${selectedProject.project_id}/voice-config`, {
-        method: 'PUT',
-        body: JSON.stringify({
-          voice_name: data.voice_name,
-          language_code: languageCode,
-          enabled: data.voice_enabled,
-          vad_mode: data.vad_mode,
-        })
-      })
+    const languageCode = data.language_code?.trim() || "en-US"
 
-      setSaveMessage({ type: 'success', text: 'Voice configuration saved successfully!' })
-      
-      // Auto-clear success message after 3 seconds
-      setTimeout(() => setSaveMessage(null), 3000)
-    } catch (error) {
-      setSaveMessage({ 
-        type: 'error', 
-        text: error instanceof Error ? error.message : 'Failed to save voice configuration' 
-      })
-    } finally {
-      setIsSaving(false)
-    }
+    updateVoiceConfigMutation.mutate({
+      voice_name: data.voice_name,
+      language_code: languageCode,
+      enabled: data.voice_enabled,
+      vad_mode: data.vad_mode,
+    })
   }
 
   function handleReset() {
@@ -137,7 +124,7 @@ export default function VoiceConfig() {
         vad_mode: selectedProject.vad_config.mode as "manual" | "auto",
       })
     }
-    setSaveMessage(null)
+    updateVoiceConfigMutation.reset()
   }
 
   if (isLoadingDetail) {

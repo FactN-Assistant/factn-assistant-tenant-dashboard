@@ -27,6 +27,7 @@ import {
   type CreateToolPayload,
   type UpdateToolPayload,
 } from "@/lib/schemas/tool-schemas";
+import { useFetch } from "./useFetch";
 
 export type { ToolResponse, ToolParameter, CreateToolPayload, UpdateToolPayload };
 
@@ -135,6 +136,7 @@ function buildUpdateBody(data: UpdateToolPayload): Record<string, any> {
  */
 export function useTools(projectId: string) {
   const queryClient = useQueryClient();
+  const fetchWithRefresh = useFetch();
 
   const toolsQueryKey = [TOOLS_QUERY_KEY, projectId];
 
@@ -147,14 +149,7 @@ export function useTools(projectId: string) {
   } = useQuery({
     queryKey: toolsQueryKey,
     queryFn: async (): Promise<ToolResponse[]> => {
-      const res = await fetch(`/api/projects/${projectId}/tools`, {
-        credentials: "include",
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.detail ?? "Failed to load tools");
-      }
-      const data = await res.json();
+      const data = await fetchWithRefresh<unknown[]>(`/projects/${projectId}/tools`);
       return z.array(toolResponseSchema).parse(data);
     },
     enabled: !!projectId,
@@ -168,17 +163,10 @@ export function useTools(projectId: string) {
   const createToolMutation = useMutation({
     mutationFn: async (payload: CreateToolPayload): Promise<ToolResponse> => {
       const body = buildCreateBody(payload);
-      const res = await fetch(`/api/projects/${projectId}/tools`, {
+      const data = await fetchWithRefresh<unknown>(`/projects/${projectId}/tools`, {
         method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.detail ?? "Failed to create tool");
-      }
-      const data = await res.json();
       return toolResponseSchema.parse(data);
     },
     onSuccess: (newTool) => {
@@ -195,20 +183,13 @@ export function useTools(projectId: string) {
   const updateToolMutation = useMutation({
     mutationFn: async (payload: UpdateToolPayload): Promise<ToolResponse> => {
       const body = buildUpdateBody(payload);
-      const res = await fetch(
-        `/api/projects/${projectId}/tools/${payload.toolName}`,
+      const data = await fetchWithRefresh<unknown>(
+        `/projects/${projectId}/tools/${payload.toolName}`,
         {
           method: "PATCH",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
         }
       );
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.detail ?? "Failed to update tool");
-      }
-      const data = await res.json();
       return toolResponseSchema.parse(data);
     },
     onSuccess: (updatedTool) => {
@@ -224,17 +205,10 @@ export function useTools(projectId: string) {
 
   const deleteToolMutation = useMutation({
     mutationFn: async (toolName: string): Promise<void> => {
-      const res = await fetch(
-        `/api/projects/${projectId}/tools/${toolName}`,
-        {
-          method: "DELETE",
-          credentials: "include",
-        }
+      await fetchWithRefresh<void>(
+        `/projects/${projectId}/tools/${toolName}`,
+        { method: "DELETE" }
       );
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.detail ?? "Failed to delete tool");
-      }
     },
     onSuccess: (_data, toolName) => {
       queryClient.invalidateQueries({ queryKey: toolsQueryKey });
