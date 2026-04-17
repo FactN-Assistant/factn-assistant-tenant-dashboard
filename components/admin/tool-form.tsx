@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
-import { ToolFormValues } from "@/lib/types"
+import { ToolFormValues, type ToolParameter } from "@/lib/schemas/tool-schemas"
 import { Plus, Webhook, X, Zap } from "lucide-react"
 import { useFieldArray, useForm } from "react-hook-form"
 import { DialogFooter } from "../ui/dialog"
@@ -199,7 +199,7 @@ export default function ToolForm({
                   <Label className="text-xs">Type</Label>
                   <Select
                     defaultValue={field.type}
-                    onValueChange={(v) => setValue(`parameters.${index}.type`, v)}
+                    onValueChange={(v) => setValue(`parameters.${index}.type`, v as ToolParameter["type"])}
                   >
                     <SelectTrigger className="h-7 text-xs">
                       <SelectValue />

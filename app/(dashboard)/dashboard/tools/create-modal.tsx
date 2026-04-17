@@ -1,7 +1,7 @@
 import ToolForm from "@/components/admin/tool-form";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import { ToolFormValues } from "@/lib/types";
+import { ToolFormValues } from "@/lib/schemas/tool-schemas";
 import { Plus } from "lucide-react";
 
 interface Props {

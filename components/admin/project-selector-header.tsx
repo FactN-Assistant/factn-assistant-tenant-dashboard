@@ -10,7 +10,6 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Skeleton } from "../ui/skeleton";
-import { useEffect } from "react";
 
 export default function ProjectSelector() {
   const { projects, selectedProject, isLoadingList, selectProject } = useProject();

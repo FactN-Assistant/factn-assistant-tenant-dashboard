@@ -1,209 +1,56 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Plus, Wrench, AlertCircle } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Tool, ToolFormValues, ToolParameter } from "@/lib/types"
-import { ToolResponse, createTool, deleteTool, fetchTools, updateTool } from "@/lib/toolsApi"
+import { ToolFormValues } from "@/lib/schemas/tool-schemas"
+import { useTools, type ToolResponse } from "@/hooks/useTools"
 import ToolCard from "@/components/admin/tool-card"
 import CreateToolModal from "./create-modal"
 import EditToolModal from "./edit-modal"
 import { useProject } from "@/hooks/useProject"
 
-// ── Helper: Convert form parameters (array) to JSON Schema (object) ──
-function parametersToJsonSchema(params: ToolParameter[]): Record<string, any> {
-  const properties: Record<string, any> = {};
-  const required: string[] = [];
-
-  params.forEach((param) => {
-    properties[param.name] = {
-      type: param.type,
-      description: param.description,
-    };
-    if (param.required) {
-      required.push(param.name);
-    }
-  });
-
-  return {
-    type: "object",
-    properties,
-    ...(required.length > 0 && { required }),
-  };
-}
-
-// ── Helper: Convert JSON Schema to form parameters (array) ──
-function jsonSchemaToParameters(schema: Record<string, any>): ToolParameter[] {
-  if (!schema || typeof schema !== "object" || !schema.properties) {
-    return [];
-  }
-
-  const requiredFields = Array.isArray(schema.required) ? schema.required : [];
-
-  return Object.entries(schema.properties).map(([name, propSchema]: [string, any]) => ({
-    name,
-    type: propSchema.type || "string",
-    description: propSchema.description || "",
-    required: requiredFields.includes(name),
-  }));
-}
-
 export default function Tools() {
   const { selectedProject } = useProject()
-  const [tools, setTools] = useState<ToolResponse[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const projectId = selectedProject?.project_id ?? ""
+  const { tools, isLoading, error, createToolMutation, updateToolMutation, deleteToolMutation } = useTools(projectId)
+
   const [isCreateModalOpen, setCreateModalOpen] = useState(false)
   const [isEditModalOpen, setEditModalOpen] = useState(false)
   const [selectedTool, setSelectedTool] = useState<ToolResponse | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // ── Fetch tools on project selection ──────────────────────
-  useEffect(() => {
-    if (!selectedProject?.project_id) {
-      setTools([])
-      return
-    }
-
-    const loadTools = async () => {
-      setIsLoading(true)
-      setError(null)
-      try {
-        const data = await fetchTools(selectedProject.project_id)
-        setTools(data)
-      } catch (err) {
-        const message = err instanceof Error ? err.message : "Failed to load tools"
-        setError(message)
-        console.error("Error fetching tools:", err)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    loadTools()
-  }, [selectedProject?.project_id])
+  const isSubmitting = createToolMutation.isPending || updateToolMutation.isPending || deleteToolMutation.isPending
 
   // ── Handle create tool ────────────────────────────────────
-  const handleCreate = async (data: ToolFormValues) => {
-    if (!selectedProject?.project_id) {
-      setError("No project selected")
-      return
-    }
-
-    setIsSubmitting(true)
-    setError(null)
-    try {
-      // Parse static_response and webhook_url as JSON if needed
-      let staticResponse: Record<string, any> | undefined = undefined;
-      if (data.execution_mode === "static" && data.static_response) {
-        try {
-          staticResponse = JSON.parse(data.static_response);
-        } catch (e) {
-          setError("Invalid JSON in static response");
-          setIsSubmitting(false);
-          return;
-        }
-      }
-
-      // Convert form parameters to JSON Schema
-      const jsonSchemaParams = parametersToJsonSchema(data.parameters);
-
-      // Convert form values to API request format
-      const createRequest = {
-        name: data.name,
-        description: data.description,
-        execution_mode: data.execution_mode,
-        parameters: jsonSchemaParams,
-        ...(data.execution_mode === "static" && staticResponse && { static_response: staticResponse }),
-        ...(data.execution_mode === "webhook" && data.webhook_url && { webhook_url: data.webhook_url }),
-        ...(data.webhook_secret && { webhook_secret: data.webhook_secret }),
-        timeout_ms: data.timeout_ms,
-      }
-
-      const newTool = await createTool(selectedProject.project_id, createRequest)
-      setTools((prev) => [...prev, newTool])
-      setCreateModalOpen(false)
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to create tool"
-      setError(message)
-      console.error("Error creating tool:", err)
-    } finally {
-      setIsSubmitting(false)
-    }
+  const handleCreate = (data: ToolFormValues) => {
+    createToolMutation.mutate(data, {
+      onSuccess: () => setCreateModalOpen(false),
+    })
   }
 
   // ── Handle edit tool ──────────────────────────────────────
-  const handleEdit = async (data: ToolFormValues) => {
-    if (!selectedProject?.project_id || !selectedTool) return
+  const handleEdit = (data: ToolFormValues) => {
+    if (!selectedTool) return
 
-    setIsSubmitting(true)
-    setError(null)
-    try {
-      // Parse static_response if needed
-      let staticResponse: Record<string, any> | undefined = undefined;
-      if (data.execution_mode === "static" && data.static_response) {
-        try {
-          staticResponse = JSON.parse(data.static_response);
-        } catch (e) {
-          setError("Invalid JSON in static response");
-          setIsSubmitting(false);
-          return;
-        }
+    updateToolMutation.mutate(
+      { toolName: selectedTool.name, ...data },
+      {
+        onSuccess: () => {
+          setEditModalOpen(false)
+          setSelectedTool(null)
+        },
       }
-
-      // Convert form parameters to JSON Schema
-      const jsonSchemaParams = parametersToJsonSchema(data.parameters);
-
-      const updateRequest = {
-        description: data.description,
-        execution_mode: data.execution_mode,
-        parameters: jsonSchemaParams,
-        ...(data.execution_mode === "static" && staticResponse && { static_response: staticResponse }),
-        ...(data.execution_mode === "webhook" && data.webhook_url && { webhook_url: data.webhook_url }),
-        ...(data.webhook_secret && { webhook_secret: data.webhook_secret }),
-        timeout_ms: data.timeout_ms,
-      }
-
-      const updatedTool = await updateTool(selectedProject.project_id, selectedTool.name, updateRequest)
-      setTools((prev) =>
-        prev.map((t) => (t.name === selectedTool.name ? updatedTool : t))
-      )
-      setEditModalOpen(false)
-      setSelectedTool(null)
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to update tool"
-      setError(message)
-      console.error("Error updating tool:", err)
-    } finally {
-      setIsSubmitting(false)
-    }
+    )
   }
 
   // ── Handle delete tool ────────────────────────────────────
-  const handleDelete = async (tool: ToolResponse) => {
-    if (!selectedProject?.project_id) {
-      setError("No project selected")
-      return
-    }
-
+  const handleDelete = (tool: ToolResponse) => {
     if (!window.confirm(`Are you sure you want to delete the tool "${tool.name}"?`)) {
       return
     }
-
-    setIsSubmitting(true)
-    setError(null)
-    try {
-      await deleteTool(selectedProject.project_id, tool.name)
-      setTools((prev) => prev.filter((t) => t.name !== tool.name))
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to delete tool"
-      setError(message)
-      console.error("Error deleting tool:", err)
-    } finally {
-      setIsSubmitting(false)
-    }
+    deleteToolMutation.mutate(tool.name)
   }
 
 

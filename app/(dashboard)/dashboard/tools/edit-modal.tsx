@@ -1,8 +1,8 @@
 import ToolForm from "@/components/admin/tool-form"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
-import { ToolFormValues, ToolParameter } from "@/lib/types"
-import { ToolResponse } from "@/lib/toolsApi"
+import { ToolFormValues, ToolParameter, ToolResponse } from "@/lib/schemas/tool-schemas"
+import { jsonSchemaToParameters } from "@/hooks/useTools"
 import { Pencil } from "lucide-react"
 
 interface Props {
@@ -11,22 +11,6 @@ interface Props {
   selectedTool: ToolResponse | null
   onSave: (data: ToolFormValues) => void,
   isSubmitting?: boolean,
-}
-
-// Helper: Convert JSON Schema to form parameters (array)
-function jsonSchemaToParameters(schema: Record<string, any>): ToolParameter[] {
-  if (!schema || typeof schema !== "object" || !schema.properties) {
-    return [];
-  }
-
-  const requiredFields = Array.isArray(schema.required) ? schema.required : [];
-
-  return Object.entries(schema.properties).map(([name, propSchema]: [string, any]) => ({
-    name,
-    type: propSchema.type || "string",
-    description: propSchema.description || "",
-    required: requiredFields.includes(name),
-  }));
 }
 
 export default function EditToolModal(props: Props) {

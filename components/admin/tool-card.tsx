@@ -1,4 +1,4 @@
-import { ToolResponse } from "@/lib/toolsApi";
+import { ToolResponse } from "@/lib/schemas/tool-schemas";
 import { useState } from "react";
 import { Card, CardContent } from "../ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../ui/collapsible";
