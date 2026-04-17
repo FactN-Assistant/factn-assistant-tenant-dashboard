@@ -60,7 +60,10 @@ export const userSchema = z.object({
   email: z.email(),
   name: z.string(),
   plan: z.enum(["free", "starter", "pro", "enterprise"]),
-  access_token: z.string(),
+  // NOTE: access_token is NOT included in /api/auth/me response
+  // It's stored as an httpOnly cookie (secure, JS-protected).
+  // Route Handlers can access it via req.cookies, no need for JSON.
+  access_token: z.string().optional(),
 
   is_suspended: z.boolean().optional().default(false),
   created_at: z.string().optional(),

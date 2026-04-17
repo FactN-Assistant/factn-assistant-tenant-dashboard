@@ -19,13 +19,13 @@
 
 import { useCallback, useEffect } from "react";
 import { useProjectStore, Project } from "@/lib/useProjectStore";
-import { useAuthStore } from "@/lib/useAuthStore";
 import { useFetch } from "./useFetch";
+import { useAuth } from "./useAuth";
 
 const BASE = "/projects";
 
 export function useProject() {
-  const { user } = useAuthStore();
+  const { user } = useAuth();
   const fetchWithAuth = useFetch();
   const {
     projects,

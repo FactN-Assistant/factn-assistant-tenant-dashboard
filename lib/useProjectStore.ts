@@ -3,7 +3,8 @@
  * ----------------------
  * Zustand store for the currently selected project and the user's project list.
  *
- * Follows the same pattern as useAuthStore:
+ * Note: The auth user data is now managed by React Query (useAuthUser hook).
+ * This store still uses Zustand for project state management:
  *  - state lives in memory only (no localStorage)
  *  - the store is populated by ProjectProvider / the ProjectSelector component
  *  - other pages (SystemPrompt, VoiceConfig, Tools, …) read from this store

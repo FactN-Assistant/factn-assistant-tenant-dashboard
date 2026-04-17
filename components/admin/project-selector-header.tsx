@@ -34,7 +34,7 @@ export default function ProjectSelector() {
       value={selectedProject?.project_id ?? ""}
       onValueChange={(id) => selectProject(id)}
     >
-      <SelectTrigger className="px-4 rounded-full">
+      <SelectTrigger className="pl-3 pr-2 rounded-full">
         <SelectValue placeholder="Select a project" />
       </SelectTrigger>
       <SelectContent>

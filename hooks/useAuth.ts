@@ -1,56 +1,88 @@
 /**
  * hooks/useAuth.ts
  * -----------------
- * Authentication hook using TanStack Query for server state and Zustand for UI state.
+ * Authentication hook using TanStack Query for all state management.
  *
- * Session hydration:
- * - useQuery targets /api/auth/me on mount
- * - If access_token cookie is valid, returns tenant profile
- * - If expired, /api/auth/me automatically tries /api/auth/refresh
- * - If both fail, returns 401 and user is logged out
+ * Session hydration flow:
+ * 1. useQuery calls /api/auth/me on mount
+ * 2. If 200: returns user data (access_token is valid)
+ * 3. If 401: tries /api/auth/refresh (using refresh_token from cookie)
+ *    - If refresh succeeds: retries /api/auth/me with new access_token
+ *    - If refresh fails: returns null (user is logged out)
+ * 4. Other errors (5xx, network): throws to show error state
  *
- * This gives us transparent session persistence across hard refreshes.
+ * All auth state is managed by React Query cache. Zustand is no longer needed.
  */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/lib/useAuthStore";
-import { AuthUser, LoginFormData, SignupFormData, SignupPayload, userSchema } from "@/lib/schemas/auth-validations";
+import { AuthUser, LoginFormData, SignupPayload, userSchema } from "@/lib/schemas/auth-validations";
 
 const AUTH_QUERY_KEY = ["auth", "me"];
 
 /**
- * Custom hook that combines TanStack Query (server state) with Zustand (UI state).
- * Returns: { user, isLoading, loginMutation, registerMutation, logoutMutation, refresh }
+ * Custom hook that manages all auth operations via TanStack Query.
+ * Returns: { user, isLoading, loginMutation, registerMutation, logoutMutation, refresh, error }
  */
 export function useAuth() {
-  const { user, setUser, clear } = useAuthStore();
   const router = useRouter();
   const queryClient = useQueryClient();
 
   // ── Hydrate from /api/auth/me on mount ──────────────────────
-  const { isLoading } = useQuery({
+  const { data: user, isLoading, error } = useQuery({
     queryKey: AUTH_QUERY_KEY,
-    queryFn: async (): Promise<AuthUser> => {
-      const res = await fetch("/api/auth/me", {
-        credentials: "include",
-      });
+    queryFn: async (): Promise<AuthUser | null> => {
+      const fetchUser = async (): Promise<Response> => {
+        return fetch("/api/auth/me", { credentials: "include" });
+      };
 
+      let res = await fetchUser();
+
+      // If 401, try to refresh the token using refresh_token
+      if (res.status === 401) {
+        try {
+          const refreshRes = await fetch("/api/auth/refresh", {
+            method: "POST",
+            credentials: "include",
+          });
+
+          if (!refreshRes.ok) {
+            return null;
+          }
+
+          res = await fetchUser();
+        } catch {
+          // Network error during refresh attempt
+          return null;
+        }
+      }
+
+      // If still not ok after refresh attempt, something went wrong
       if (!res.ok) {
         throw new Error(`Failed to fetch user: ${res.statusText}`);
       }
 
       const data = await res.json();
-      return userSchema.parse(data);
+
+      // Log validation errors for debugging
+      try {
+        return userSchema.parse(data);
+      } catch (validationError) {
+        console.error(
+          "[useAuth] Zod validation failed for /api/auth/me response:",
+          validationError,
+          "Response data was:",
+          data
+        );
+        throw validationError;
+      }
     },
-    // Don't retry on failure — if auth fails, user is logged out
+    // Don't retry on failure — we've already tried refresh
     retry: false,
     // Cache for 15 minutes; queries older than this are stale
     staleTime: 15 * 60 * 1000,
     // Keep the last successful data while refetching in the background
     gcTime: 20 * 60 * 1000,
-    // Run on mount
-    enabled: !user?.tenant_id,
   });
 
   // ── Login mutation ──────────────────────────────────────────
@@ -69,17 +101,10 @@ export function useAuth() {
       }
 
       const data = await res.json();
-
-      console.log("response: ", data)
-
       return userSchema.parse(data);
     },
     onSuccess: (data) => {
-      // Update Zustand store
-      setUser(data);
-      // Update query cache so next /api/auth/me is skipped
       queryClient.setQueryData(AUTH_QUERY_KEY, data);
-      // Redirect
       router.push("/dashboard");
     },
     // onError is handled in the component
@@ -104,7 +129,6 @@ export function useAuth() {
       return userSchema.parse(data);
     },
     onSuccess: (data) => {
-      setUser(data);
       queryClient.setQueryData(AUTH_QUERY_KEY, data);
       router.push("/dashboard");
     },
@@ -119,14 +143,12 @@ export function useAuth() {
       });
     },
     onSuccess: () => {
-      // Clear both Zustand store and query cache
-      clear();
+      // Clear query cache
       queryClient.removeQueries({ queryKey: AUTH_QUERY_KEY });
       router.push("/auth/login");
     },
     // Even if logout fails, clear local state
     onError: () => {
-      clear();
       queryClient.removeQueries({ queryKey: AUTH_QUERY_KEY });
       router.push("/auth/login");
     },
@@ -141,7 +163,6 @@ export function useAuth() {
       });
 
       if (!res.ok) {
-        clear();
         queryClient.removeQueries({ queryKey: AUTH_QUERY_KEY });
         router.push("/auth/login");
         return false;
@@ -149,11 +170,9 @@ export function useAuth() {
 
       const data = await res.json();
       const validated = userSchema.parse(data);
-      setUser(validated);
       queryClient.setQueryData(AUTH_QUERY_KEY, validated);
       return true;
     } catch {
-      clear();
       queryClient.removeQueries({ queryKey: AUTH_QUERY_KEY });
       return false;
     }
@@ -162,6 +181,7 @@ export function useAuth() {
   return {
     user,
     isLoading,
+    error,
     loginMutation,
     registerMutation,
     logoutMutation,

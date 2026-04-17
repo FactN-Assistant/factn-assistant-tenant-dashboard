@@ -18,6 +18,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
+import Link from "next/link"
 
 // 1. Update the props type definition
 interface NavMainProps {
@@ -45,12 +46,12 @@ export function NavMain({ items, label }: NavMainProps) { // 2. Destructure labe
           <Collapsible key={item.title} asChild defaultOpen={item.isActive}>
             <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip={item.title}>
-                <a href={item.url}>
+                <Link href={item.url}>
                   {/* Note: In JSX, lowercase 'item.icon' might cause issues. 
                       If it breaks, use: const Icon = item.icon and <Icon /> */}
                   <item.icon /> 
                   <span>{item.title}</span>
-                </a>
+                </Link>
               </SidebarMenuButton>
               {item.items?.length ? (
                 <>
@@ -65,9 +66,9 @@ export function NavMain({ items, label }: NavMainProps) { // 2. Destructure labe
                       {item.items?.map((subItem) => (
                         <SidebarMenuSubItem key={subItem.title}>
                           <SidebarMenuSubButton asChild>
-                            <a href={subItem.url}>
+                            <Link href={subItem.url}>
                               <span>{subItem.title}</span>
-                            </a>
+                            </Link>
                           </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                       ))}

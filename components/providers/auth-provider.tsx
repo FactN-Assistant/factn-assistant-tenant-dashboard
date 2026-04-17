@@ -1,13 +1,19 @@
 /**
  * components/AuthProvider.tsx
  * ----------------------------
- * Wraps the app with TanStack Query and triggers session hydration on mount.
+ * Wraps the app with TanStack Query for state management.
  * Place this inside your root layout.tsx.
  *
  * This provider:
  *  1. Sets up QueryClientProvider for TanStack Query
- *  2. Runs useAuth() which hydrates session from /api/auth/me on mount
- *  3. Makes auth state available to all child components
+ *  2. Makes auth state available to all components via useAuth() hook
+ *  3. useAuth() automatically runs hydration query on first mount in any component
+ *
+ * Note: We don't need a separate "AuthHydrator" component because:
+ *  - useAuth() is a useQuery hook that runs automatically on mount
+ *  - Child components (like LoggedUser, nav-user) call useAuth()
+ *  - The query will start as soon as any component needs the data
+ *  - React Query deduplicates requests automatically
  *
  * Usage:
  *   // app/layout.tsx
@@ -20,18 +26,7 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/useAuth";
 import { ReactNode, useState } from "react";
-
-/**
- * Inner component that uses the auth hook.
- * Separated from the provider so QueryClientProvider is above it.
- */
-function AuthHydrator({ children }: { children: ReactNode }) {
-  // This useEffect-like hook runs /api/auth/me on mount to re-hydrate from cookies
-  useAuth();
-  return <>{children}</>;
-}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   // Create QueryClient once per provider instance
@@ -49,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthHydrator>{children}</AuthHydrator>
+      {children}
     </QueryClientProvider>
   );
 }

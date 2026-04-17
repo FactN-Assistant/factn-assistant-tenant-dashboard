@@ -153,3 +153,10 @@ export const SUPPORTED_LANGUAGES = [
   { code: "sv",  name: "Swedish" },
   { code: "ur",  name: "Urdu" },
 ]
+
+export const PLAN_STYLES: Record<string, { bg: string; text: string; label: string }> = {
+  free:       { bg: "bg-green-600/40",  text: "text-green-300", label: "Free"       },
+  starter:    { bg: "bg-blue-600/40",     text: "text-blue-300",    label: "Starter"    },
+  pro:        { bg: "bg-purple-600/40",   text: "text-purple-300",  label: "Pro"        },
+  enterprise: { bg: "bg-amber-600/40",    text: "text-amber-300",   label: "Enterprise" },
+};

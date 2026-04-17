@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { useSidebar } from "@/components/ui/sidebar"
 import Logout from "../logout-button"
-import LoggedUser from "./logged-user"
+import LoggedUser from "./loggedin-user"
 import ProjectSelector from "./project-selector-header"
 
 export function AdminHeader() {
