@@ -18,12 +18,6 @@ export default function PromptConfig() {
   const { selectedProject, isLoadingDetail, updateSystemPromptMutation } = useProject()
   const isSaving = updateSystemPromptMutation.isPending
 
-  const saveMessage = updateSystemPromptMutation.isSuccess
-    ? { type: 'success' as const, text: 'System prompt saved successfully!' }
-    : updateSystemPromptMutation.isError
-    ? { type: 'error' as const, text: updateSystemPromptMutation.error?.message ?? 'Failed to save system prompt' }
-    : null
-
   const {
     register,
     handleSubmit,
@@ -43,14 +37,6 @@ export default function PromptConfig() {
       })
     }
   }, [selectedProject, reset])
-
-  // Auto-clear success message after 3 seconds
-  useEffect(() => {
-    if (updateSystemPromptMutation.isSuccess) {
-      const timer = setTimeout(() => updateSystemPromptMutation.reset(), 3000)
-      return () => clearTimeout(timer)
-    }
-  }, [updateSystemPromptMutation.isSuccess, updateSystemPromptMutation])
   
   const onSubmit: SubmitHandler<FormInput> = (data) => {
     if (!selectedProject) return
@@ -96,16 +82,6 @@ export default function PromptConfig() {
           {isSaving ? 'Saving...' : 'Save Changes'}
         </Button>
       </div>
-
-      {saveMessage && (
-        <div className={`mb-4 p-3 rounded-lg text-sm ${
-          saveMessage.type === 'success' 
-            ? 'bg-green-900/30 text-green-300 border border-green-800' 
-            : 'bg-red-900/30 text-red-300 border border-red-800'
-        }`}>
-          {saveMessage.text}
-        </div>
-      )}
 
       <Card className="overflow-hidden border-muted/60 shadow-sm">
         <CardContent className="p-6">

@@ -17,6 +17,7 @@
 
 import { useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 import { useAuth } from "./useAuth";
 import { useFetch } from "./useFetch";
 import { projectSchema, type Project } from "@/lib/schemas/project-schemas";
@@ -123,6 +124,10 @@ export function useProject() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [...PROJECT_DETAIL_KEY, effectiveSelectedId] });
+      toast.success("System prompt saved successfully");
+    },
+    onError: (err: Error) => {
+      toast.error(err.message);
     },
   });
 
@@ -142,6 +147,10 @@ export function useProject() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [...PROJECT_DETAIL_KEY, effectiveSelectedId] });
+      toast.success("Voice configuration saved");
+    },
+    onError: (err: Error) => {
+      toast.error(err.message);
     },
   });
 

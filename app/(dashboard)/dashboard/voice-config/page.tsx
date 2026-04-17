@@ -34,7 +34,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { VoiceFormValues } from "@/lib/types"
 import { GEMINI_VOICES, SUPPORTED_LANGUAGES, TONE_COLORS } from "@/lib/constants"
 import { useProject } from "@/hooks/useProject"
@@ -68,12 +67,6 @@ export default function VoiceConfig() {
   const { selectedProject, isLoadingDetail, updateVoiceConfigMutation } = useProject()
   const isSaving = updateVoiceConfigMutation.isPending
 
-  const saveMessage = updateVoiceConfigMutation.isSuccess
-    ? { type: 'success' as const, text: 'Voice configuration saved successfully!' }
-    : updateVoiceConfigMutation.isError
-    ? { type: 'error' as const, text: updateVoiceConfigMutation.error?.message ?? 'Failed to save voice configuration' }
-    : null
-
   const { control, handleSubmit, watch, reset, formState: { isDirty } } =
     useForm<VoiceFormValues>({ defaultValues: DEFAULT_VALUES })
 
@@ -90,17 +83,8 @@ export default function VoiceConfig() {
         language_code: selectedProject.voice_config.language_code,
         vad_mode: selectedProject.vad_config.mode as "manual" | "auto",
       })
-      updateVoiceConfigMutation.reset()
     }
   }, [selectedProject, reset])
-
-  // Auto-clear success message after 3 seconds
-  useEffect(() => {
-    if (updateVoiceConfigMutation.isSuccess) {
-      const timer = setTimeout(() => updateVoiceConfigMutation.reset(), 3000)
-      return () => clearTimeout(timer)
-    }
-  }, [updateVoiceConfigMutation.isSuccess, updateVoiceConfigMutation])
 
   const onSubmit: SubmitHandler<VoiceFormValues> = (data: VoiceFormValues) => {
     if (!selectedProject) return
@@ -124,7 +108,6 @@ export default function VoiceConfig() {
         vad_mode: selectedProject.vad_config.mode as "manual" | "auto",
       })
     }
-    updateVoiceConfigMutation.reset()
   }
 
   if (isLoadingDetail) {
@@ -157,16 +140,6 @@ export default function VoiceConfig() {
           </p>
         </div>
       </div>
-
-      {saveMessage && (
-        <div className={`mb-4 p-3 rounded-lg text-sm ${
-          saveMessage.type === 'success' 
-            ? 'bg-green-900/30 text-green-300 border border-green-800' 
-            : 'bg-red-900/30 text-red-300 border border-red-800'
-        }`}>
-          {saveMessage.text}
-        </div>
-      )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
 
@@ -406,16 +379,6 @@ export default function VoiceConfig() {
             </div>
           </CardContent>
         </Card>
-
-        {/* Saved alert */}
-        {saveMessage?.type === 'success' && (
-          <Alert className="border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-900">
-            <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-            <AlertDescription className="text-green-700 dark:text-green-400 text-sm">
-              Voice configuration saved. New sessions will use these settings immediately.
-            </AlertDescription>
-          </Alert>
-        )}
 
         {/* Actions */}
         <Separator />
