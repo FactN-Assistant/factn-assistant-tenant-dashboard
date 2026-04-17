@@ -1,6 +1,6 @@
 'use client'
 
-import { cn } from "@/lib/utils"
+import { cn, getPasswordStrength } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
   Field,
@@ -9,139 +9,72 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { useState } from "react";
-import { useRouter } from "next/navigation"
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/useAuth"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import toast from "react-hot-toast"
+import { SignupFormData, SignupPayload, signupSchema } from "@/lib/schemas/auth-validations"
+import { Check, Eye, EyeOff } from "lucide-react"
 
-interface FormState {
-  name: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-}
- 
-interface FormErrors {
-  name?: string;
-  email?: string;
-  password?: string;
-  confirmPassword?: string;
-  general?: string;
-}
+export function SignupForm({className, ...props}: React.ComponentProps<"form">) {
 
-function validateRegisterForm(values: FormState): FormErrors {
-  const errors: FormErrors = {};
- 
-  if (!values.name.trim()) {
-    errors.name = "Name is required.";
-  } else if (values.name.trim().length > 100) {
-    errors.name = "Name must be 100 characters or fewer.";
-  }
- 
-  if (!values.email.trim()) {
-    errors.email = "Email is required.";
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
-    errors.email = "Enter a valid email address.";
-  }
- 
-  if (!values.password) {
-    errors.password = "Password is required.";
-  } else if (values.password.length < 8) {
-    errors.password = "Password must be at least 8 characters.";
-  } else if (values.password.length > 128) {
-    errors.password = "Password must be 128 characters or fewer.";
-  }
- 
-  if (!values.confirmPassword) {
-    errors.confirmPassword = "Please confirm your password.";
-  } else if (values.password !== values.confirmPassword) {
-    errors.confirmPassword = "Passwords do not match.";
-  }
- 
-  return errors;
-}
-
-// ── Password strength indicator ─────────────────────────────────
- 
-function getPasswordStrength(password: string): {
-  score: number;
-  label: string;
-  color: string;
-} {
-  if (!password) return { score: 0, label: "", color: "bg-gray-200" };
-  let score = 0;
-  if (password.length >= 8) score++;
-  if (password.length >= 12) score++;
-  if (/[A-Z]/.test(password)) score++;
-  if (/[0-9]/.test(password)) score++;
-  if (/[^A-Za-z0-9]/.test(password)) score++;
- 
-  if (score <= 1) return { score, label: "Weak", color: "bg-red-400" };
-  if (score <= 3) return { score, label: "Fair", color: "bg-yellow-400" };
-  return { score, label: "Strong", color: "bg-green-400" };
-}
-
-export function SignupForm({
-  className,
-  ...props
-}: React.ComponentProps<"form">) {
-  const { register } = useAuth()
-  
-  const [formData, setFormData] = useState<FormState>({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
+  const { registerMutation } = useAuth()
+  const {
+    register, handleSubmit, watch,
+    formState: { errors }, reset
+  } = useForm<SignupFormData>({
+    resolver: zodResolver(signupSchema),
+    mode: "onBlur",
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
   });
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [loading, setLoading] = useState(false)
-  const pwStrength = getPasswordStrength(formData.password);
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (errors[name as keyof FormErrors]) {
-      setErrors((prev) => ({ ...prev, [name]: undefined }));
-    }
-  }
+  const passwordValue = watch("password");
+  const confirmPasswordValue = watch("confirmPassword");
+  const isLoading = registerMutation.isPending;
+  const serverError = registerMutation.error;
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setErrors({});
- 
-    const clientErrors = validateRegisterForm(formData);
-    if (Object.keys(clientErrors).length > 0) {
-      setErrors(clientErrors);
-      return;
+  // Memoize password strength to avoid recalculation
+  const pwStrength = useMemo(
+    () => getPasswordStrength(passwordValue),
+    [passwordValue]
+  );
+
+  // Show error toast when mutation fails
+  useEffect(() => {
+    if (serverError) {
+      const message = serverError.message || "Registration failed";
+      toast.error(message);
     }
- 
-    setLoading(true);
- 
-    try {
-      await register({
-        name: formData.name.trim(),
-        email: formData.email.toLowerCase().trim(),
-        password: formData.password,
-      });
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Registration failed";
- 
-      if (message.includes("already exists") || message.includes("409")) {
-        // Map server-side duplicate email error back to the email field
-        setErrors({ email: "An account with this email already exists." });
-      } else if (message.includes("422")) {
-        setErrors({ general: "Please check your input. " + message });
-      } else {
-        setErrors({ general: message });
-      }
- 
-      setLoading(false);
+  }, [serverError]);
+
+  // Show success toast on registration
+  useEffect(() => {
+    if (registerMutation.isSuccess) {
+      toast.success("Account created successfully!");
+      reset();
     }
-  }
+  }, [registerMutation.isSuccess, reset]);
+
+  const onSubmit = async (data: SignupPayload) => {
+    registerMutation.mutate({
+      name: data.name.trim(),
+      email: data.email.toLowerCase().trim(),
+      password: data.password,
+    });
+  };
 
   return (
     <form 
-      className={cn("flex flex-col gap-6", className)} 
-      onSubmit={handleSubmit}
+      className={cn("flex flex-col gap-6", className)}
+      onSubmit={handleSubmit(onSubmit)}
       {...props}
     >
       <FieldGroup>
@@ -156,83 +89,116 @@ export function SignupForm({
           <Input
             id="name"
             type="text"
-            name="full_name"
             placeholder="John Doe"
-            value={formData.name}
             required
-            disabled={loading}
+            disabled={isLoading}
             className="bg-background h-10"
-            onChange={handleChange}
+            {...register("name")}
           />
+          {errors.name && (
+            <p className="text-sm text-red-600 mt-0">{errors.name.message}</p>
+          )}
         </Field>
         <Field>
           <FieldLabel htmlFor="email">Email</FieldLabel>
           <Input
             id="email"
             type="email"
-            name="email"
-            value={formData.email}
             placeholder="john@example.com"
             required
-            disabled={loading}
+            disabled={isLoading}
             className="bg-background h-10"
-            onChange={handleChange}
+            {...register("email")}
           />
+          {errors.email && (
+            <p className="text-sm text-red-600 mt-0">{errors.email.message}</p>
+          )}
           <FieldDescription>
             All of your projects will be owned by this email.
           </FieldDescription>
         </Field>
         <Field>
           <FieldLabel htmlFor="password">Password</FieldLabel>
-          <Input
-            id="password"
-            type="password"
-            name="password"
-            value={formData.password}
-            required
-            disabled={loading}
-            className="bg-background h-10"
-            onChange={handleChange}
-          />
+          <div className="relative"> 
+            <Input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              required
+              disabled={isLoading}
+              className="bg-background h-10 pr-10"
+              {...register("password")}
+            />
+            <Button
+              type="button"
+              variant={"ghost"}
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-1 top-1 text-muted-foreground hover:text-foreground transition-all duration-300 ease-in-out"
+              disabled={isLoading}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+          {errors.password && (
+            <p className="text-sm text-red-600 mt-0">{errors.password.message}</p>
+          )}
           <FieldDescription>
             Must be at least 8 characters long.
           </FieldDescription>
+          {passwordValue && (
+            <div className="mt-2">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="flex-1 bg-gray-200 h-2 rounded overflow-hidden">
+                  <div
+                    className={`h-full ${pwStrength.color}`}
+                    style={{ width: `${(pwStrength.score / 5) * 100}%` }}
+                  />
+                </div>
+                <span className="text-xs font-semibold">{pwStrength.label}</span>
+              </div>
+            </div>
+          )}
         </Field>
         <Field>
-          <FieldLabel htmlFor="confirm-password">Confirm Password</FieldLabel>
-          <Input
-            id="confirm-password"
-            type="password"
-            name="confirm_password"
-            value={formData.confirmPassword}
-            required
-            disabled={loading}
-            className="bg-background h-10"
-            onChange={handleChange}
-          />
+          <FieldLabel htmlFor="confirmPassword">Confirm Password</FieldLabel>
+          <div className="relative flex items-center">
+            <Input
+              id="confirmPassword"
+              type="password"
+              required
+              disabled={isLoading}
+              // Added pr-10 to ensure text doesn't overlap the icon
+              className="bg-background h-10 pr-10" 
+              {...register("confirmPassword")}
+            />
+            
+            {/* Logic: Show check if confirmPassword matches password and is not empty */}
+            {confirmPasswordValue && confirmPasswordValue === passwordValue && (
+              <div className="absolute right-3 flex items-center pointer-events-none text-emerald-500 animate-in zoom-in duration-300">
+                <Check className="h-4 w-4 stroke-[3px]" />
+              </div>
+            )}
+          </div>
+          {errors.confirmPassword && (
+            <p className="text-sm text-red-600 mt-0">{errors.confirmPassword.message}</p>
+          )}
           <FieldDescription>Please confirm your password.</FieldDescription>
         </Field>
         <Field>
           <Button 
             type="submit" 
-            className="h-10" 
+            className="h-10 bg-emerald-600 text-neutral-100 hover:bg-emerald-700"
             size={"lg"} 
-            disabled={loading}
+            disabled={isLoading}
           >
-            {loading ? "Creating account…" : "Create Account"}
+            {isLoading ? "Creating account…" : "Create Account"}
           </Button>
         </Field>
-        {/* <FieldSeparator>Or continue with</FieldSeparator> */}
         <Field>
-          {/* <Button variant="outline" type="button">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-              <path
-                d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"
-                fill="currentColor"
-              />
-            </svg>
-            Sign up with GitHub
-          </Button> */}
           <FieldDescription className="px-6 text-center">
             Already have an account? <a href="login">Log in</a>
           </FieldDescription>

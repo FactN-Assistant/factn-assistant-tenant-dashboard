@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/lib/useAuthStore";
+import toast from "react-hot-toast";
+import { useEffect } from "react";
 
 /**
  * Logout button.
@@ -30,32 +29,32 @@ import { useAuthStore } from "@/lib/useAuthStore";
  * can be issued. If you need immediate full invalidation, rotate
  * JWT_SECRET in your environment (affects all tenants).
  */
-export default function Logout() {
-  const { logout } = useAuth();
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const router = useRouter()
-  const { clear } = useAuthStore()
+export default function LogoutButton() {
+  const { logoutMutation } = useAuth();
 
-  async function handleClick() {
-    setIsLoggingOut(true);
-    try {
-      await logout();
-    } catch {
-      // Force clear local state even if API fails
-      clear();
-      router.push("/auth/login");
-    } finally {
-      setIsLoggingOut(false);
+  const isLoggingOut = logoutMutation.isPending;
+  const logoutError = logoutMutation.error;
+
+  // Show error toast if logout fails
+  useEffect(() => {
+    if (logoutError) {
+      const message = logoutError.message || "Logout failed";
+      toast.error(message);
     }
-  }
+  }, [logoutError]);
+
+  const handleClick = () => {
+    logoutMutation.mutate();
+  };
 
   return (
     <Button
-      className="border py-5 px-4 text-neutral-200 rounded-full bg-green-600 hover:bg-green-500 transition-all duration-200 ease-in-out disabled:opacity-60"
+      className="border text-neutral-100 bg-rose-600 hover:bg-rose-700 "
       onClick={handleClick}
+      size={"lg"}
       disabled={isLoggingOut}
     >
-      {isLoggingOut ? "Signing out…" : "Logout"}
+      {isLoggingOut ? "Signing out…" : "Sign out"}
     </Button>
   );
 }

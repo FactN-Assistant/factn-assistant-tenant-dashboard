@@ -11,11 +11,11 @@ export default function signup() {
       <div className="flex flex-col gap-4 p-6 md:p-10">
         <div className="flex justify-center gap-2 md:justify-start">
           <a href="/" className="flex items-center gap-2 self-center font-medium">
-            <div className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
+            <div className="flex size-6 items-center justify-center rounded-md bg-emerald-500 text-primary-foreground">
               <AudioLines className="size-4" />
             </div>
               {TEXTS.APP_NAME}
-            </a>
+          </a>
         </div>
         <div className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-xs">
@@ -26,8 +26,8 @@ export default function signup() {
       <div className="relative hidden bg-muted lg:block">
         <div className="w-full h-full">
           <LightPillar
-            topColor="#29ff4c"
-            bottomColor="#9eb6ff"
+            topColor="#10b981"      // Professional Emerald (Matches your Primary)
+            bottomColor="#022c22"   // Deepest Forest Green (Matches your Dark Background)
             intensity={1}
             rotationSpeed={0.4}
             glowAmount={0.005}

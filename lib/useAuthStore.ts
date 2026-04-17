@@ -14,7 +14,7 @@
  */
 
 import { create } from "zustand";
-import { AuthUser } from "./auth";
+import { AuthUser } from "./schemas/auth-validations";
 
 interface AuthState {
   user: AuthUser | null;

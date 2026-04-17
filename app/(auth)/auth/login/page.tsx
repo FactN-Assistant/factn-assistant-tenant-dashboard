@@ -11,11 +11,11 @@ export default function Login() {
       <div className="flex flex-col gap-4 p-6 md:p-10">
         <div className="flex justify-center gap-2 md:justify-start">
           <a href="/" className="flex items-center gap-2 self-center font-medium">
-            <div className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
+            <div className="flex size-6 items-center justify-center rounded-md bg-emerald-500 text-primary-foreground">
               <AudioLines className="size-4" />
             </div>
               {TEXTS.APP_NAME}
-            </a>
+          </a>
         </div>
         <div className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-xs">
@@ -26,7 +26,7 @@ export default function Login() {
       <div className="relative hidden bg-muted lg:block">
         <div className="w-full h-full">
           <FloatingLines
-            linesGradient={["#47f553","#2fc15b","#47f56a"]}
+            linesGradient={["#064e3b", "#059669", "#10b981"]}
             animationSpeed={1}
             interactive
             bendRadius={5}

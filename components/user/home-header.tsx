@@ -1,7 +1,5 @@
 import { AudioLines } from "lucide-react";
 import Link from "next/link";
-import { Button, buttonVariants } from "../ui/button";
-import { cn } from "@/lib/utils";
 import PrimaryLink from "../primary-link";
 import SecondaryLink from "../secondary-link";
 
