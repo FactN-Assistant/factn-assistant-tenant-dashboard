@@ -175,7 +175,7 @@ export function useAuth() {
       credentials: "include",
     });
     clear();
-    router.push("/login");
+    router.push("/auth/login");
   }, [clear, router]);
 
   // ── Refresh ─────────────────────────────────────────────────
@@ -203,7 +203,7 @@ export function useAuth() {
 
       if (!res.ok) {
         clear();
-        router.push("/login");
+        router.push("/auth/login");
         return false;
       }
 

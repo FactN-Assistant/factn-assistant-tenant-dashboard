@@ -12,11 +12,13 @@ import { DialogFooter } from "../ui/dialog"
 export default function ToolForm({
   defaultValues,
   onSave,
-  onOpenChange
+  onOpenChange,
+  isSubmitting = false,
 }: {
   defaultValues?: Partial<ToolFormValues>
   onSave: (data: ToolFormValues) => void
   onOpenChange: () => void
+  isSubmitting?: boolean
 }) {
   const { register, control, handleSubmit, watch, setValue, formState: { errors } } =
     useForm<ToolFormValues>({
@@ -234,8 +236,10 @@ export default function ToolForm({
       </div>
 
       <DialogFooter className="pt-2">
-        <Button type="button" variant="outline" onClick={onOpenChange}>Cancel</Button>
-        <Button type="submit">Save tool</Button>
+        <Button type="button" variant="outline" onClick={onOpenChange} disabled={isSubmitting}>Cancel</Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? "Saving..." : "Save tool"}
+        </Button>
         </DialogFooter>
     </form>
   )

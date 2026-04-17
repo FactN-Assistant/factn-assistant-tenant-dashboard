@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/lib/useAuthStore";
 
 /**
  * Logout button.
@@ -31,14 +33,18 @@ import { Button } from "@/components/ui/button";
 export default function Logout() {
   const { logout } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const router = useRouter()
+  const { clear } = useAuthStore()
 
   async function handleClick() {
     setIsLoggingOut(true);
     try {
       await logout();
-      // useAuth.logout() calls /api/auth/logout then router.push("/login")
     } catch {
-      // Even if the API call fails, clear local state and redirect
+      // Force clear local state even if API fails
+      clear();
+      router.push("/auth/login");
+    } finally {
       setIsLoggingOut(false);
     }
   }

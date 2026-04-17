@@ -7,6 +7,7 @@ import {
   ChartArea,
   Frame,
   Hammer,
+  KeyRound,
   LifeBuoy,
   Map,
   MicVocal,
@@ -72,6 +73,11 @@ const data = {
       title: "Voice Config",
       url: "/dashboard/voice-config",
       icon: MicVocal,
+    },
+    {
+      title: "API Keys",
+      url: "/dashboard/keys",
+      icon: KeyRound,
     },
   ],
   navSecondary: [
