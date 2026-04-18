@@ -188,6 +188,45 @@ export function useProject() {
     },
   });
 
+  // ── 8. Update project info mutation ────────────────────────
+
+  const updateProjectInfoMutation = useMutation({
+    mutationFn: async (data: CreateProjectFormValues): Promise<Project> => {
+      const body: Record<string, any> = {
+        name: data.name,
+        description: data.description,
+        gemini_model: data.gemini_model,
+      };
+      if (data.webhook_url?.trim()) {
+        body.webhook_url = data.webhook_url.trim();
+      } else {
+        body.webhook_url = null;
+      }
+      if (data.webhook_secret?.trim()) {
+        body.webhook_secret = data.webhook_secret.trim();
+      }
+      body.allowed_origins = data.allowed_origins
+        ? data.allowed_origins.split(",").map((o) => o.trim()).filter(Boolean)
+        : [];
+      const res = await fetchWithRefresh<unknown>(
+        `/projects/${effectiveSelectedId}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify(body),
+        }
+      );
+      return projectSchema.parse(res);
+    },
+    onSuccess: (updated) => {
+      queryClient.invalidateQueries({ queryKey: PROJECTS_LIST_KEY });
+      queryClient.invalidateQueries({ queryKey: [...PROJECT_DETAIL_KEY, effectiveSelectedId] });
+      toast.success(`Project "${updated.name}" updated`);
+    },
+    onError: (err: Error) => {
+      toast.error(err.message);
+    },
+  });
+
   // ── Combine errors ────────────────────────────────────────
 
   const error = listError || detailError
@@ -204,5 +243,6 @@ export function useProject() {
     updateSystemPromptMutation,
     updateVoiceConfigMutation,
     createProjectMutation,
+    updateProjectInfoMutation,
   };
 }

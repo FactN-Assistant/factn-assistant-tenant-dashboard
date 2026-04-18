@@ -158,7 +158,7 @@ export default function CreateProjectModal({ isOpen, onOpenChange, onSave, isSub
             <Label htmlFor="project-allowed-origins" className="text-sm font-medium">
               Allowed origins
             </Label>
-            <Input
+            <Textarea
               id="project-allowed-origins"
               placeholder="https://app.example.com, https://staging.example.com"
               {...register("allowed_origins")}

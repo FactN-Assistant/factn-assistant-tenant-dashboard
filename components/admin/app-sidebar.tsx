@@ -5,6 +5,7 @@ import {
   AudioLines,
   BookOpen,
   ChartArea,
+  FileText,
   Frame,
   Hammer,
   KeyRound,
@@ -59,6 +60,11 @@ const data = {
     },
   ],
   navMain: [
+    {
+      title: "Project Info",
+      url: "/dashboard/info",
+      icon: FileText,
+    },
     {
       title: "System Prompt",
       url: "/dashboard/prompt",
