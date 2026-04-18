@@ -7,8 +7,7 @@
 
 import { z } from "zod";
 
-// ── Tool parameter (form-level representation) ────────────────
-
+// Tool parameter (form-level representation)
 export const toolParameterSchema = z.object({
   name: z
     .string()
@@ -24,8 +23,7 @@ export const toolParameterSchema = z.object({
   required: z.boolean(),
 });
 
-// ── Tool form values (what React Hook Form manages) ───────────
-
+// Tool form values (what React Hook Form manages)
 export const toolFormSchema = z
   .object({
     name: z
@@ -80,8 +78,7 @@ export const toolFormSchema = z
     }
   );
 
-// ── API response schema (what the backend returns) ────────────
-
+// API response schema (what the backend returns)
 export const toolResponseSchema = z.object({
   name: z.string(),
   description: z.string(),
@@ -92,8 +89,7 @@ export const toolResponseSchema = z.object({
   timeout_ms: z.number(),
 });
 
-// ── Mutation payload schemas ──────────────────────────────────
-
+// Mutation payload schemas
 export const createToolPayloadSchema = z.object({
   name: z.string().min(1),
   description: z.string().min(1),
@@ -116,7 +112,6 @@ export const updateToolPayloadSchema = z.object({
   timeout_ms: z.number().int().min(100).max(30000).optional(),
 });
 
-// ── Inferred types ────────────────────────────────────────────
 
 export type ToolParameter = z.infer<typeof toolParameterSchema>;
 export type ToolFormValues = z.infer<typeof toolFormSchema>;

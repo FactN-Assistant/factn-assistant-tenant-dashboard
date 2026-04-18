@@ -77,7 +77,7 @@ export default function Tools() {
         </div>
         <Button 
           onClick={() => setCreateModalOpen(true)} 
-          className="gap-1.5 py-5 px-3 rounded-full"
+          className="gap-1.5 py-5 px-3"
           disabled={!selectedProject || isSubmitting}
         >
           <Plus />

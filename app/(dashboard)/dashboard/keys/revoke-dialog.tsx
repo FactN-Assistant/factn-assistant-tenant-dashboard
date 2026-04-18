@@ -1,5 +1,5 @@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
-import { ApiKey } from "@/lib/types"
+import { type ApiKey } from "@/lib/schemas/key-schemas"
 import { AlertTriangle } from "lucide-react"
 
 export default function RevokeDialog({

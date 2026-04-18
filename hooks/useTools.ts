@@ -174,6 +174,7 @@ export function useTools(projectId: string) {
       toast.success(`Tool "${newTool.name}" created`);
     },
     onError: (err: Error) => {
+      console.log("err: ", err)
       toast.error(err.message);
     },
   });

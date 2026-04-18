@@ -7,21 +7,20 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
-import { ApiKey, MintedToken, MintTokenForm } from "@/lib/types"
-import { mintEphemeralToken, rotateEphemeralToken } from "@/lib/keysApi"
+import { type ApiKey, type MintedToken, type MintTokenForm } from "@/lib/schemas/key-schemas"
+import { useKeys } from "@/hooks/useKeys"
 import { CheckCircle2, ChevronDown, Globe, Info, Key, RefreshCw, Server, Zap, AlertCircle, Eye, EyeOff } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 
-export default function EphemeralTokenSection({ keys }: { keys: ApiKey[] }) {
+export default function EphemeralTokenSection({ keys, projectId }: { keys: ApiKey[]; projectId: string }) {
+  const { mintTokenMutation, rotateTokenMutation } = useKeys(projectId)
+
   const [open, setOpen] = useState(false)
   const [mintedToken, setMintedToken] = useState<MintedToken | null>(null)
-  const [minting, setMinting] = useState(false)
-  const [rotating, setRotating] = useState(false)
   const [selectedKeyId, setSelectedKeyId] = useState<string>("")
   const [secretKeyInput, setSecretKeyInput] = useState("")
   const [showSecretKey, setShowSecretKey] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
   const { register, handleSubmit, reset } = useForm<MintTokenForm>({
     defaultValues: { ttl_seconds: 60, metadata_raw: "" },
@@ -30,13 +29,11 @@ export default function EphemeralTokenSection({ keys }: { keys: ApiKey[] }) {
   const secretKeys = keys.filter(k => k.key_type === "secret" && !k.revoked)
   const selectedKey = keys.find(k => k.key_id === selectedKeyId)
 
+  const minting = mintTokenMutation.isPending
+  const rotating = rotateTokenMutation.isPending
+
   async function onMint(data: MintTokenForm) {
-    if (!selectedKeyId || !secretKeyInput.trim()) {
-      setError("Please provide a secret key")
-      return
-    }
-    setMinting(true)
-    setError(null)
+    if (!selectedKeyId || !secretKeyInput.trim()) return
 
     // Parse metadata lines: "key=value" per line
     const metadata: Record<string, string> = {}
@@ -45,42 +42,23 @@ export default function EphemeralTokenSection({ keys }: { keys: ApiKey[] }) {
       if (k?.trim()) metadata[k.trim()] = rest.join("=").trim()
     })
 
-    try {
-      const response = await mintEphemeralToken(secretKeyInput.trim(), {
-        ttl_seconds: data.ttl_seconds,
-        metadata,
-      })
-      setMintedToken(response)
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to mint token"
-      setError(message)
-      console.error("Error minting token:", err)
-    } finally {
-      setMinting(false)
-    }
+    const response = await mintTokenMutation.mutateAsync({
+      secretKey: secretKeyInput.trim(),
+      ttl_seconds: data.ttl_seconds,
+      metadata,
+    })
+    setMintedToken(response)
   }
 
   async function onRotate() {
-    if (!secretKeyInput.trim() || !mintedToken) {
-      setError("Please provide a secret key")
-      return
-    }
-    setRotating(true)
-    setError(null)
+    if (!secretKeyInput.trim() || !mintedToken) return
 
-    try {
-      const response = await rotateEphemeralToken(secretKeyInput.trim(), {
-        current_token: mintedToken.ephemeral_token,
-        ttl_seconds: mintedToken.ttl_seconds,
-      })
-      setMintedToken(response)
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to rotate token"
-      setError(message)
-      console.error("Error rotating token:", err)
-    } finally {
-      setRotating(false)
-    }
+    const response = await rotateTokenMutation.mutateAsync({
+      secretKey: secretKeyInput.trim(),
+      current_token: mintedToken.ephemeral_token,
+      ttl_seconds: mintedToken.ttl_seconds,
+    })
+    setMintedToken(response)
   }
 
   function clearToken() {
@@ -113,14 +91,6 @@ export default function EphemeralTokenSection({ keys }: { keys: ApiKey[] }) {
         <CollapsibleContent>
           <CardContent className="pt-0 space-y-5">
             <Separator />
-
-            {/* Error Alert */}
-            {error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
 
             {/* How it works */}
             <div className="space-y-2">

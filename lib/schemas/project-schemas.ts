@@ -7,8 +7,7 @@
 
 import { z } from "zod";
 
-// ── Voice & VAD config ────────────────────────────────────────
-
+// Voice & VAD config
 export const voiceConfigSchema = z.object({
   enabled: z.boolean(),
   voice_name: z.string(),
@@ -19,8 +18,7 @@ export const vadConfigSchema = z.object({
   mode: z.enum(["manual", "auto"]),
 });
 
-// ── Project ───────────────────────────────────────────────────
-
+// Project
 export const projectSchema = z.object({
   project_id: z.string(),
   tenant_id: z.string(),
@@ -41,8 +39,14 @@ export const projectSchema = z.object({
   updated_at: z.string(),
 });
 
-// ── Inferred types ────────────────────────────────────────────
+export const voiceFormSchema = z.object({
+  voice_enabled: z.boolean(),
+  voice_name: z.string(),
+  language_code: z.string(),
+  vad_mode: z.enum(["manual", "auto"])
+})
 
 export type VoiceConfig = z.infer<typeof voiceConfigSchema>;
 export type VADConfig = z.infer<typeof vadConfigSchema>;
 export type Project = z.infer<typeof projectSchema>;
+export type VoiceFormValues = z.infer<typeof voiceFormSchema>

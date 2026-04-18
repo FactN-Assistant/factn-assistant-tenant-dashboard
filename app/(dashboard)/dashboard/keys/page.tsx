@@ -1,181 +1,56 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useForm } from "react-hook-form"
+import { useState } from "react"
 import {
   Key,
   Plus,
-  AlertCircle,
   ChevronDown,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import { Separator } from "@/components/ui/separator"
-import { ApiKey, CreatedKey, CreateKeyForm, MintedToken, MintTokenForm } from "@/lib/types"
-import { createApiKey, listApiKeys, revokeApiKey } from "@/lib/keysApi"
+import { type ApiKey, type CreatedKey, type CreateKeyForm } from "@/lib/schemas/key-schemas"
 import KeyRow from "@/components/admin/key-row"
 import CreateKeyModal from "./create-key-modal"
 import KeyRevealModal from "./key-reveal-modal"
 import RevokeDialog from "./revoke-dialog"
 import EphemeralTokenSection from "./ephemeral-token-section"
 import { useProject } from "@/hooks/useProject"
-
-// ── Types ─────────────────────────────────────────────────────
-
-// ── Mock data ─────────────────────────────────────────────────
-
-
-// ── Helpers ───────────────────────────────────────────────────
-
-// ── Copy button ───────────────────────────────────────────────
-
-// ── Key type badge ────────────────────────────────────────────
-
-// ── One-time key reveal modal ─────────────────────────────────
-
-// ── Create key modal ──────────────────────────────────────────
-
-// ── Revoke confirm dialog ─────────────────────────────────────
-
-
-// ── Single key row ────────────────────────────────────────────
-
-// ── Ephemeral token section ───────────────────────────────────
-
-// ── Page ──────────────────────────────────────────────────────
+import { useKeys } from "@/hooks/useKeys"
 
 export default function ApiKeys() {
   const { selectedProject } = useProject()
-  const [keys, setKeys] = useState<ApiKey[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const projectId = selectedProject?.project_id ?? ""
+  const { keys, isLoading, createKeyMutation, revokeKeyMutation } = useKeys(projectId)
+
   const [showCreate, setShowCreate] = useState(false)
   const [createdKey, setCreatedKey] = useState<CreatedKey | null>(null)
   const [revokeTarget, setRevokeTarget] = useState<ApiKey | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
-  // ── Fetch keys on project selection ──────────────────────────
-  useEffect(() => {
-    if (!selectedProject?.project_id) {
-      setKeys([])
-      return
-    }
-
-    const loadKeys = async () => {
-      setIsLoading(true)
-      setError(null)
-      try {
-        const data = await listApiKeys(selectedProject.project_id)
-        setKeys(data)
-      } catch (err) {
-        const message = err instanceof Error ? err.message : "Failed to load API keys"
-        setError(message)
-        console.error("Error fetching keys:", err)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    loadKeys()
-  }, [selectedProject?.project_id])
 
   const activeKeys = keys.filter(k => !k.revoked)
   const revokedKeys = keys.filter(k => k.revoked)
 
-  // ── Handle create key ────────────────────────────────────────
+  const isSubmitting = createKeyMutation.isPending || revokeKeyMutation.isPending
+
   async function handleCreate(data: CreateKeyForm) {
-    if (!selectedProject?.project_id) {
-      setError("No project selected")
-      return
-    }
-
-    setIsSubmitting(true)
-    setError(null)
-    try {
-      const response = await createApiKey(selectedProject.project_id, {
-        label: data.label,
-        key_type: data.key_type,
-        rate_limit_rpm: data.rate_limit_rpm,
-      })
-
-      // Add the new key to the list (without raw key)
-      const newKey: ApiKey = {
-        key_id: response.key_id,
-        key_prefix: response.key_prefix,
-        key_type: response.key_type,
-        label: response.label,
-        rate_limit_rpm: response.rate_limit_rpm,
-        revoked: false,
-        created_at: response.created_at,
-        last_used_at: null,
-      }
-
-      // Create the revealed key object (with raw key)
-      const revealed: CreatedKey = {
-        key_id: response.key_id,
-        raw_key: response.raw_key,
-        key_prefix: response.key_prefix,
-        key_type: response.key_type,
-        label: response.label,
-        rate_limit_rpm: response.rate_limit_rpm,
-        created_at: response.created_at,
-      }
-
-      setKeys((prev) => [newKey, ...prev])
-      setShowCreate(false)
-      setCreatedKey(revealed)
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to create key"
-      setError(message)
-      console.error("Error creating key:", err)
-    } finally {
-      setIsSubmitting(false)
-    }
+    const result = await createKeyMutation.mutateAsync(data)
+    setShowCreate(false)
+    setCreatedKey(result)
   }
 
-  // ── Handle revoke key ────────────────────────────────────────
   async function handleRevoke(key: ApiKey) {
-    if (!selectedProject?.project_id) {
-      setError("No project selected")
-      return
-    }
-
-    setIsSubmitting(true)
-    setError(null)
-    try {
-      await revokeApiKey(selectedProject.project_id, key.key_id)
-      setKeys((prev) =>
-        prev.map((k) =>
-          k.key_id === key.key_id ? { ...k, revoked: true } : k
-        )
-      )
-      setRevokeTarget(null)
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to revoke key"
-      setError(message)
-      console.error("Error revoking key:", err)
-    } finally {
-      setIsSubmitting(false)
-    }
+    await revokeKeyMutation.mutateAsync(key.key_id)
+    setRevokeTarget(null)
   }
 
   return (
     <div className="m-10 max-w-3xl space-y-4">
-      {/* Error Alert */}
-      {error && (
-        <Alert variant="destructive" className="mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -247,7 +122,7 @@ export default function ApiKeys() {
 
       {/* Ephemeral tokens */}
       {!isLoading && (
-        <EphemeralTokenSection keys={keys} />
+        <EphemeralTokenSection keys={keys} projectId={projectId} />
       )}
 
       {/* Revoked keys (collapsible) */}

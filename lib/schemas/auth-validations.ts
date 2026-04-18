@@ -35,11 +35,10 @@ export const signupPayloadSchema = z.object({
     .max(100, "Name must be 100 characters or fewer")
     .regex(/^[a-zA-Z\s'-]+$/, "Name contains invalid characters"),
   email: z
-    .string()
+    .email("Enter a valid email address")
     .trim()
     .toLowerCase()
-    .min(1, "Email is required")
-    .email("Enter a valid email address"),
+    .min(1, "Email is required"),
   password: z
     .string()
     .min(8, "Password must be at least 8 characters")
@@ -64,11 +63,11 @@ export const userSchema = z.object({
   // It's stored as an httpOnly cookie (secure, JS-protected).
   // Route Handlers can access it via req.cookies, no need for JSON.
   access_token: z.string().optional(),
-
   is_suspended: z.boolean().optional().default(false),
   created_at: z.string().optional(),
   plan_limits: z.record(z.string(), z.any()).optional().default({}),
 });
+
 
 export type LoginFormData = z.infer<typeof loginSchema>;
 export type SignupPayload = z.infer<typeof signupPayloadSchema>; // No confirmPassword

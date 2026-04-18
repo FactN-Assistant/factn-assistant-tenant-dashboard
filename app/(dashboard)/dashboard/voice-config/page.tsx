@@ -11,6 +11,7 @@ import {
   RotateCcw,
   Info,
   CheckCircle2,
+  Currency,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -34,9 +35,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { VoiceFormValues } from "@/lib/types"
 import { GEMINI_VOICES, SUPPORTED_LANGUAGES, TONE_COLORS } from "@/lib/constants"
 import { useProject } from "@/hooks/useProject"
+import { VoiceFormValues } from "@/lib/schemas/project-schemas"
 
 const DEFAULT_VALUES: VoiceFormValues = {
   voice_enabled: true,
@@ -67,8 +68,10 @@ export default function VoiceConfig() {
   const { selectedProject, isLoadingDetail, updateVoiceConfigMutation } = useProject()
   const isSaving = updateVoiceConfigMutation.isPending
 
-  const { control, handleSubmit, watch, reset, formState: { isDirty } } =
-    useForm<VoiceFormValues>({ defaultValues: DEFAULT_VALUES })
+  const { 
+    control, handleSubmit, 
+    watch, reset, formState: { isDirty } 
+  } = useForm<VoiceFormValues>({ defaultValues: DEFAULT_VALUES })
 
   const voiceEnabled = watch("voice_enabled")
   const selectedVoice = watch("voice_name")
@@ -76,6 +79,7 @@ export default function VoiceConfig() {
 
   // ── Load voice config from selected project ────────────────
   useEffect(() => {  
+    console.log("selected Proj: ", selectedProject)
     if (selectedProject) {
       reset({
         voice_enabled: selectedProject.voice_config.enabled,
@@ -139,9 +143,58 @@ export default function VoiceConfig() {
             Configure how Gemini speaks and listens in this project.
           </p>
         </div>
+
+        <div className="flex items-center gap-2 justify-between">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-10 px-2"
+            onClick={handleReset}
+            disabled={!isDirty || isSaving}
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            Reset
+          </Button>
+          <Button type="submit" form="vad-form" size="sm" className="h-10 px-5 bg-emerald-600 text-neutral-100 hover:bg-emerald-700" disabled={!isDirty || isSaving}>
+            {isSaving ? 'Saving...' : 'Save changes'}
+          </Button>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" id="vad-form">
+
+        {/* ── Summary banner ────────────────────────────────── */}
+        <Card className="bg-muted/30">
+          <CardContent className="py-0 px-4">
+            <p className="text-xs text-muted-foreground font-medium mb-2 uppercase tracking-wider">Current configuration</p>
+            <div className="flex flex-wrap gap-x-6 gap-y-1.5">
+              <div className="flex items-center gap-1.5 text-xs">
+                <span className="text-muted-foreground">Voice output</span>
+                <Badge variant={voiceEnabled ? "default" : "secondary"} className="text-[10px] px-1.5 py-0">
+                  {voiceEnabled ? "enabled" : "disabled"}
+                </Badge>
+              </div>
+              {voiceEnabled && (
+                <>
+                  <div className="flex items-center gap-1.5 text-xs">
+                    <span className="text-muted-foreground">Voice</span>
+                    <span className="font-mono font-medium">{watch("voice_name")}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs">
+                    <span className="text-muted-foreground">Language</span>
+                    <span className="font-mono font-medium">{watch("language_code")}</span>
+                  </div>
+                </>
+              )}
+              <div className="flex items-center gap-1.5 text-xs">
+                <span className="text-muted-foreground">VAD</span>
+                <span className="font-mono font-medium">{watch("vad_mode")}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
 
         {/* ── Voice Config card ─────────────────────────────── */}
         <Card>
@@ -213,19 +266,6 @@ export default function VoiceConfig() {
                     </Select>
                   )}
                 />
-
-                {/* Selected voice preview chip */}
-                {selectedVoice && voiceEnabled && (
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <span>Selected:</span>
-                    <span className="font-semibold text-foreground">{selectedVoice}</span>
-                    {selectedVoiceTone && (
-                      <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${TONE_COLORS[selectedVoiceTone] ?? ""}`}>
-                        {selectedVoiceTone}
-                      </span>
-                    )}
-                  </div>
-                )}
               </div>
 
               {/* Language code */}
@@ -238,7 +278,7 @@ export default function VoiceConfig() {
                   control={control}
                   name="language_code"
                   render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange} disabled={!voiceEnabled || isSaving}>
+                    <Select value={selectedProject.voice_config.language_code} onValueChange={field.onChange} disabled={!voiceEnabled || isSaving}>
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select a language…" />
                       </SelectTrigger>
@@ -348,58 +388,6 @@ export default function VoiceConfig() {
 
           </CardContent>
         </Card>
-
-        {/* ── Summary banner ────────────────────────────────── */}
-        <Card className="bg-muted/30">
-          <CardContent className="py-3 px-4">
-            <p className="text-xs text-muted-foreground font-medium mb-2 uppercase tracking-wider">Current configuration</p>
-            <div className="flex flex-wrap gap-x-6 gap-y-1.5">
-              <div className="flex items-center gap-1.5 text-xs">
-                <span className="text-muted-foreground">Voice output</span>
-                <Badge variant={voiceEnabled ? "default" : "secondary"} className="text-[10px] px-1.5 py-0">
-                  {voiceEnabled ? "enabled" : "disabled"}
-                </Badge>
-              </div>
-              {voiceEnabled && (
-                <>
-                  <div className="flex items-center gap-1.5 text-xs">
-                    <span className="text-muted-foreground">Voice</span>
-                    <span className="font-mono font-medium">{watch("voice_name")}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-xs">
-                    <span className="text-muted-foreground">Language</span>
-                    <span className="font-mono font-medium">{watch("language_code")}</span>
-                  </div>
-                </>
-              )}
-              <div className="flex items-center gap-1.5 text-xs">
-                <span className="text-muted-foreground">VAD</span>
-                <span className="font-mono font-medium">{watch("vad_mode")}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Actions */}
-        <Separator />
-        <div className="flex items-center justify-between">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="gap-1.5 text-muted-foreground"
-            onClick={handleReset}
-            disabled={!isDirty || isSaving}
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
-            Reset to defaults
-          </Button>
-          <Button type="submit" size="sm" className="gap-1.5" disabled={!isDirty || isSaving}>
-            <Save className="h-3.5 w-3.5" />
-            {isSaving ? 'Saving...' : 'Save changes'}
-          </Button>
-        </div>
-
       </form>
     </div>
   )

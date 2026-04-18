@@ -237,7 +237,7 @@ export default function ToolForm({
 
       <DialogFooter className="pt-2">
         <Button type="button" variant="outline" onClick={onOpenChange} disabled={isSubmitting}>Cancel</Button>
-        <Button type="submit" disabled={isSubmitting}>
+        <Button type="submit" disabled={isSubmitting} className="bg-emerald-600 text-neutral-100 hover:bg-emerald-700">
           {isSubmitting ? "Saving..." : "Save tool"}
         </Button>
         </DialogFooter>

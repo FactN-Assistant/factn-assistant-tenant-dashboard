@@ -76,15 +76,14 @@ export default function PromptConfig() {
         <Button 
           onClick={handleSubmit(onSubmit)} 
           disabled={!isDirty || isSaving}
-          className="gap-1.5 py-5 px-6 rounded-full bg-green-600 hover:bg-green-700 transition-colors text-neutral-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="h-10 px-5 bg-emerald-600 text-neutral-100 hover:bg-emerald-700" 
         >
-          <Save className="h-4 w-4" />
           {isSaving ? 'Saving...' : 'Save Changes'}
         </Button>
       </div>
 
       <Card className="overflow-hidden border-muted/60 shadow-sm">
-        <CardContent className="p-6">
+        <CardContent className="px-4">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <Field className="space-y-2">
               <FieldLabel htmlFor="systemPrompt" className="text-sm font-medium">
@@ -96,7 +95,7 @@ export default function PromptConfig() {
               
               <Textarea 
                 id="systemPrompt" 
-                className="min-h-[300px] mt-3 font-mono text-sm leading-relaxed resize-none border-muted/50 focus-visible:ring-green-600" 
+                className="min-h-[300px] mt-3 font-mono text-sm leading-relaxed resize-none border hover:border-green-700 focus-visible:ring-1 focus-visible:ring-green-600 focus-visible:border-none" 
                 placeholder="e.g. You are a helpful assistant that specializes in data analysis..." 
                 disabled={isSaving}
                 {...register("systemPrompt", { required: "System prompt is required" })}
@@ -104,7 +103,7 @@ export default function PromptConfig() {
             </Field>
 
             <div className="flex items-center justify-end pt-2">
-               <p className="text-[10px] text-muted-foreground italic mr-4">
+               <p className="text-xs text-muted-foreground">
                  Changes are applied immediately to new sessions.
                </p>
             </div>

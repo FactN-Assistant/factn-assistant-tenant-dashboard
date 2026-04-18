@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-import { CreatedKey } from "@/lib/types"
+import { type CreatedKey } from "@/lib/schemas/key-schemas"
 import { AlertTriangle, Eye, EyeOff, ShieldCheck } from "lucide-react"
 import { useState } from "react"
 

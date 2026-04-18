@@ -1,4 +1,4 @@
-import { ApiKey } from "@/lib/types";
+import { type ApiKey } from "@/lib/schemas/key-schemas";
 import { Clock, Key, Trash2, Loader2 } from "lucide-react";
 import KeyTypeBadge from "./key-type-badge";
 import { Badge } from "../ui/badge";

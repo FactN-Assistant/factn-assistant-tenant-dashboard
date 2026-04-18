@@ -2,6 +2,15 @@
 
 import { useAuth } from "./useAuth";
 
+function extractDetail(detail: unknown): string | undefined {
+  if (!detail) return undefined;
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail)) {
+    return detail.map((d: any) => d.msg ?? JSON.stringify(d)).join("; ");
+  }
+  return JSON.stringify(detail);
+}
+
 export function useFetch() {
   const { refresh } = useAuth();
 
@@ -27,7 +36,7 @@ export function useFetch() {
 
       if (!retryRes.ok) {
         const body = await retryRes.json().catch(() => ({}));
-        throw new Error(body.detail ?? retryRes.statusText);
+        throw new Error(extractDetail(body.detail) ?? retryRes.statusText);
       }
       if (retryRes.status === 204) return undefined as T;
       return retryRes.json();
@@ -35,7 +44,7 @@ export function useFetch() {
 
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      throw new Error(body.detail ?? res.statusText);
+      throw new Error(extractDetail(body.detail) ?? res.statusText);
     }
 
     if (res.status === 204) return undefined as T;
