@@ -2,9 +2,10 @@
 
 import { useEffect } from "react"
 import { useForm, Controller, SubmitHandler } from "react-hook-form"
-import { Info, RotateCcw, Webhook, Globe, Cpu } from "lucide-react"
+import { Info, RotateCcw, Webhook, Globe, Cpu, Crown, ArrowUpRight } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -23,6 +24,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { useProject } from "@/hooks/useProject"
+import { usePlans } from "@/hooks/usePlans"
 import { type CreateProjectFormValues } from "@/lib/schemas/project-schemas"
 
 const SUPPORTED_MODELS = [
@@ -57,6 +59,7 @@ function FieldLabel({ label, tooltip }: { label: string; tooltip: string }) {
 
 export default function ProjectInfo() {
   const { selectedProject, isLoadingDetail, updateProjectInfoMutation } = useProject()
+  const { currentPlan, isLoadingCurrentPlan } = usePlans()
   const isSaving = updateProjectInfoMutation.isPending
 
   const {
@@ -154,6 +157,74 @@ export default function ProjectInfo() {
           </Button>
         </div>
       </div>
+
+      {/* Plan card */}
+      <Card className="mb-4">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Crown className="h-4 w-4 text-muted-foreground" />
+                Your Plan
+              </CardTitle>
+              <CardDescription className="text-xs mt-1">
+                Current subscription tier and resource limits.
+              </CardDescription>
+            </div>
+            {currentPlan && (
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="text-xs font-semibold capitalize px-2.5 py-0.5">
+                  {currentPlan.plan}
+                </Badge>
+                {currentPlan.plan !== "enterprise" && (
+                  <Button size="sm" variant="outline" className="h-8 text-xs gap-1">
+                    Upgrade
+                    <ArrowUpRight className="h-3 w-3" />
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoadingCurrentPlan ? (
+            <p className="text-sm text-muted-foreground">Loading plan details...</p>
+          ) : currentPlan ? (
+            <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+              <div className="space-y-0.5">
+                <p className="text-xs text-muted-foreground">Max projects</p>
+                <p className="text-sm font-medium">{currentPlan.limits.projects ?? "Unlimited"}</p>
+              </div>
+              <div className="space-y-0.5">
+                <p className="text-xs text-muted-foreground">Tools per project</p>
+                <p className="text-sm font-medium">{currentPlan.limits.tools_per_project ?? "Unlimited"}</p>
+              </div>
+              <div className="space-y-0.5">
+                <p className="text-xs text-muted-foreground">Concurrent sessions</p>
+                <p className="text-sm font-medium">{currentPlan.limits.concurrent_sessions ?? "Unlimited"}</p>
+              </div>
+              <div className="space-y-0.5">
+                <p className="text-xs text-muted-foreground">Session TTL</p>
+                <p className="text-sm font-medium">{currentPlan.limits.session_ttl_seconds}s</p>
+              </div>
+              <div className="space-y-0.5">
+                <p className="text-xs text-muted-foreground">Daily token quota</p>
+                <p className="text-sm font-medium">{currentPlan.limits.daily_token_quota?.toLocaleString() ?? "Unlimited"}</p>
+              </div>
+              <div className="space-y-0.5">
+                <p className="text-xs text-muted-foreground">Webhook timeout</p>
+                <p className="text-sm font-medium">{currentPlan.limits.webhook_timeout_ms.toLocaleString()}ms</p>
+              </div>
+              <div className="space-y-0.5">
+                <p className="text-xs text-muted-foreground">Rate limit</p>
+                <p className="text-sm font-medium">{currentPlan.limits.rate_limit_rpm ?? "Unlimited"} rpm</p>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">Unable to load plan details.</p>
+          )}
+        </CardContent>
+      </Card>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" id="project-info-form">
 
