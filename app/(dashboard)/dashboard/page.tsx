@@ -1,9 +1,5 @@
-import { ThemeToggler } from "@/components/theme-toggler";
+import { redirect } from "next/navigation";
 
 export default function Dashboard() {
-  return(
-    <div>
-      
-    </div>
-  )
+  redirect("/dashboard/info")
 }
