@@ -20,10 +20,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { useAuth } from "./useAuth";
 import { useFetch } from "./useFetch";
-import { projectSchema, type Project } from "@/lib/schemas/project-schemas";
+import { projectSchema, type Project, type CreateProjectFormValues } from "@/lib/schemas/project-schemas";
 import { z } from "zod";
 
-export type { Project };
+export type { Project, CreateProjectFormValues };
 
 const PROJECTS_LIST_KEY = ["projects", "list"];
 const SELECTED_PROJECT_ID_KEY = ["projects", "selectedId"];
@@ -154,6 +154,40 @@ export function useProject() {
     },
   });
 
+  // ── 7. Create project mutation ─────────────────────────────
+
+  const createProjectMutation = useMutation({
+    mutationFn: async (data: CreateProjectFormValues): Promise<Project> => {
+      const body: Record<string, any> = {
+        name: data.name,
+        description: data.description,
+        system_prompt: "You are a helpful assistant.",
+        gemini_model: data.gemini_model,
+      };
+      if (data.webhook_url?.trim()) body.webhook_url = data.webhook_url.trim();
+      if (data.webhook_secret?.trim()) body.webhook_secret = data.webhook_secret.trim();
+      if (data.allowed_origins?.trim()) {
+        body.allowed_origins = data.allowed_origins
+          .split(",")
+          .map((o) => o.trim())
+          .filter(Boolean);
+      }
+      const res = await fetchWithRefresh<unknown>("/projects", {
+        method: "POST",
+        body: JSON.stringify(body),
+      });
+      return projectSchema.parse(res);
+    },
+    onSuccess: (newProject) => {
+      queryClient.invalidateQueries({ queryKey: PROJECTS_LIST_KEY });
+      queryClient.setQueryData(SELECTED_PROJECT_ID_KEY, newProject.project_id);
+      toast.success(`Project "${newProject.name}" created`);
+    },
+    onError: (err: Error) => {
+      toast.error(err.message);
+    },
+  });
+
   // ── Combine errors ────────────────────────────────────────
 
   const error = listError || detailError
@@ -169,5 +203,6 @@ export function useProject() {
     selectProject,
     updateSystemPromptMutation,
     updateVoiceConfigMutation,
+    createProjectMutation,
   };
 }

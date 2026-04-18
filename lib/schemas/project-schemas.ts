@@ -46,7 +46,26 @@ export const voiceFormSchema = z.object({
   vad_mode: z.enum(["manual", "auto"])
 })
 
+// Create project form
+export const createProjectFormSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, "Project name is required")
+    .max(100, "Project name must be 100 characters or fewer"),
+  description: z
+    .string()
+    .trim()
+    .max(500, "Description must be 500 characters or fewer")
+    .default(""),
+  gemini_model: z.string().min(1, "Model is required"),
+  webhook_url: z.string().default(""),
+  webhook_secret: z.string().default(""),
+  allowed_origins: z.string().default(""),
+});
+
 export type VoiceConfig = z.infer<typeof voiceConfigSchema>;
 export type VADConfig = z.infer<typeof vadConfigSchema>;
 export type Project = z.infer<typeof projectSchema>;
-export type VoiceFormValues = z.infer<typeof voiceFormSchema>
+export type VoiceFormValues = z.infer<typeof voiceFormSchema>;
+export type CreateProjectFormValues = z.infer<typeof createProjectFormSchema>;
