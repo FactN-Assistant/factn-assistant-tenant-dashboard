@@ -64,8 +64,51 @@ export const createProjectFormSchema = z.object({
   allowed_origins: z.string().default(""),
 });
 
+// Usage summary (GET /v1/projects/{id}/usage)
+export const usageSummarySchema = z.object({
+  project_id: z.string(),
+  since: z.string(),
+  until: z.string(),
+  total_sessions: z.number(),
+  total_turns: z.number(),
+  total_tool_calls: z.number(),
+  total_duration_s: z.number(),
+  avg_duration_s: z.number(),
+  total_input_tokens: z.number(),
+  total_output_tokens: z.number(),
+  total_tokens: z.number(),
+  error_count: z.number(),
+  error_rate_pct: z.number(),
+});
+
+// Session record (GET /v1/projects/{id}/sessions)
+export const sessionSchema = z.object({
+  session_id: z.string(),
+  project_id: z.string(),
+  status: z.string(),
+  started_at: z.string(),
+  ended_at: z.string(),
+  duration_seconds: z.number(),
+  turns: z.number(),
+  tool_calls: z.number(),
+  input_tokens: z.number(),
+  output_tokens: z.number(),
+  api_key_id: z.string(),
+  error_message: z.string().nullable(),
+});
+
+export const sessionsResponseSchema = z.object({
+  sessions: z.array(sessionSchema),
+  total: z.number(),
+  limit: z.number(),
+  skip: z.number(),
+});
+
 export type VoiceConfig = z.infer<typeof voiceConfigSchema>;
 export type VADConfig = z.infer<typeof vadConfigSchema>;
 export type Project = z.infer<typeof projectSchema>;
 export type VoiceFormValues = z.infer<typeof voiceFormSchema>;
 export type CreateProjectFormValues = z.infer<typeof createProjectFormSchema>;
+export type UsageSummary = z.infer<typeof usageSummarySchema>;
+export type Session = z.infer<typeof sessionSchema>;
+export type SessionsResponse = z.infer<typeof sessionsResponseSchema>;

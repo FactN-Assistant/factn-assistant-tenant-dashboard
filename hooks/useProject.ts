@@ -20,14 +20,24 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { useAuth } from "./useAuth";
 import { useFetch } from "./useFetch";
-import { projectSchema, type Project, type CreateProjectFormValues } from "@/lib/schemas/project-schemas";
+import {
+  projectSchema,
+  usageSummarySchema,
+  sessionsResponseSchema,
+  type Project,
+  type CreateProjectFormValues,
+  type UsageSummary,
+  type SessionsResponse,
+} from "@/lib/schemas/project-schemas";
 import { z } from "zod";
 
-export type { Project, CreateProjectFormValues };
+export type { Project, CreateProjectFormValues, UsageSummary, SessionsResponse };
 
 const PROJECTS_LIST_KEY = ["projects", "list"];
 const SELECTED_PROJECT_ID_KEY = ["projects", "selectedId"];
 const PROJECT_DETAIL_KEY = ["projects", "detail"];
+const USAGE_KEY = ["projects", "usage"];
+const SESSIONS_KEY = ["projects", "sessions"];
 
 /**
  * Custom hook that manages all project operations via TanStack Query.
@@ -227,6 +237,52 @@ export function useProject() {
     },
   });
 
+  // ── 9. Usage summary query ─────────────────────────────────
+
+  const {
+    data: usage = null,
+    isLoading: isLoadingUsage,
+  } = useQuery<UsageSummary>({
+    queryKey: [...USAGE_KEY, effectiveSelectedId],
+    queryFn: async (): Promise<UsageSummary> => {
+      const res = await fetch(`/api/projects/${effectiveSelectedId}/usage`, {
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.detail ?? "Failed to load usage");
+      }
+      const data = await res.json();
+      return usageSummarySchema.parse(data);
+    },
+    enabled: !!user && !!effectiveSelectedId,
+    staleTime: 60 * 1000,
+    retry: false,
+  });
+
+  // ── 10. Sessions list query ────────────────────────────────
+
+  const {
+    data: sessionsData = null,
+    isLoading: isLoadingSessions,
+  } = useQuery<SessionsResponse>({
+    queryKey: [...SESSIONS_KEY, effectiveSelectedId],
+    queryFn: async (): Promise<SessionsResponse> => {
+      const res = await fetch(`/api/projects/${effectiveSelectedId}/sessions?limit=50`, {
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.detail ?? "Failed to load sessions");
+      }
+      const data = await res.json();
+      return sessionsResponseSchema.parse(data);
+    },
+    enabled: !!user && !!effectiveSelectedId,
+    staleTime: 60 * 1000,
+    retry: false,
+  });
+
   // ── Combine errors ────────────────────────────────────────
 
   const error = listError || detailError
@@ -244,5 +300,9 @@ export function useProject() {
     updateVoiceConfigMutation,
     createProjectMutation,
     updateProjectInfoMutation,
+    usage,
+    isLoadingUsage,
+    sessionsData,
+    isLoadingSessions,
   };
 }
