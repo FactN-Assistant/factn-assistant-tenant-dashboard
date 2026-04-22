@@ -61,8 +61,8 @@ export default function DashboardPage() {
             const targetProjectId = mostRecent?.project_id ?? projects[0].project_id;
             router.push(`/${targetProjectId}/info`);
           } else {
-            // No projects exist yet — redirect to create project page or home
-            router.push("/");
+            // No projects exist yet — send to onboarding to create the first one
+            router.push("/onboarding");
           }
         } catch (error) {
           console.error("Error redirecting to project:", error);

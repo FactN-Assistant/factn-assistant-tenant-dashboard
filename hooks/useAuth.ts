@@ -143,13 +143,14 @@ export function useAuth() {
       });
     },
     onSuccess: () => {
-      // Clear query cache
-      queryClient.removeQueries({ queryKey: AUTH_QUERY_KEY });
+      // Clear the entire cache so no data from the previous account leaks
+      // into the next session (e.g. projects, keys, usage, sessions).
+      queryClient.clear();
       router.push("/auth/login");
     },
     // Even if logout fails, clear local state
     onError: () => {
-      queryClient.removeQueries({ queryKey: AUTH_QUERY_KEY });
+      queryClient.clear();
       router.push("/auth/login");
     },
   });
