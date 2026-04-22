@@ -3,19 +3,18 @@
 import * as React from "react"
 import { Moon, Sun, Monitor } from "lucide-react"
 import { useTheme } from "next-themes"
-import { useEffect, useState } from "react"
-import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
+import { motion } from "motion/react"
 
-interface ThemeTogglerProps extends React.HTMLAttributes<HTMLDivElement> {}
+type ThemeTogglerProps = React.ComponentProps<"div">
 
 export function ThemeToggler({ className, ...props }: ThemeTogglerProps) {
   const { theme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  const mounted = React.useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  )
 
   if (!mounted) return null
 
@@ -28,7 +27,7 @@ export function ThemeToggler({ className, ...props }: ThemeTogglerProps) {
   return (
     <div 
       className={cn(
-        "flex items-center gap-1 bg-slate-200 dark:bg-zinc-900 p-1 rounded-full w-fit border border-slate-300 dark:border-zinc-800 shadow-inner",
+        "brand-panel flex items-center gap-1 rounded-full p-1.5",
         className
       )}
       {...props}
@@ -42,15 +41,15 @@ export function ThemeToggler({ className, ...props }: ThemeTogglerProps) {
             key={option.value}
             onClick={() => setTheme(option.value)}
             className={cn(
-              "relative flex h-8 w-8 items-center justify-center rounded-full transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400",
-              isActive ? "text-white" : "text-slate-500 hover:text-slate-900 dark:hover:text-slate-100"
+              "relative flex h-9 w-9 items-center justify-center rounded-full transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+              isActive ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
             )}
             aria-label={`${option.label} theme`}
           >
             {isActive && (
               <motion.div
                 layoutId="activeBackground"
-                className="absolute inset-0 bg-green-600 rounded-full shadow-md"
+                className="absolute inset-0 rounded-full bg-primary shadow-md"
                 transition={{
                   type: "spring",
                   stiffness: 380,

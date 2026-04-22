@@ -1,9 +1,8 @@
 'use client'
 
 import { LoginForm } from "@/components/user/login-form";
-import { AudioLines } from "lucide-react";
+import AuthShell from "@/components/brand/auth-shell";
 import FloatingLines from "@/components/user/decoration/FloatingLines"
-import { TEXTS } from "@/lib/constants";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -22,28 +21,11 @@ export default function Login() {
   // While checking auth status or refreshing token, show loading state
   if (isLoading) {
     return (
-      <div className="grid min-h-svh lg:grid-cols-[1fr_2fr]">
-        <div className="flex flex-col gap-4 p-6 md:p-10">
-          <div className="flex justify-center gap-2 md:justify-start">
-            <a href="/" className="flex items-center gap-2 self-center font-medium">
-              <div className="flex size-6 items-center justify-center rounded-md bg-emerald-500 text-primary-foreground">
-                <AudioLines className="size-4" />
-              </div>
-              {TEXTS.APP_NAME}
-            </a>
-          </div>
-          <div className="flex flex-1 items-center justify-center">
-            <div className="w-full max-w-xs">
-              <div className="flex items-center justify-center">
-                <div className="text-center">
-                  <p className="text-muted-foreground">Loading...</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="relative hidden bg-muted lg:block">
-          <div className="w-full h-full">
+      <AuthShell
+        kicker="Session check"
+        blurb="We are verifying your workspace session and refreshing access if needed."
+        visual={
+          <div className="h-full w-full">
             <FloatingLines
               linesGradient={["#064e3b", "#059669", "#10b981"]}
               animationSpeed={1}
@@ -57,31 +39,20 @@ export default function Login() {
               middleWavePosition={undefined}          
             />
           </div>
+        }
+      >
+        <div className="flex min-h-[320px] items-center justify-center text-center">
+          <p className="text-muted-foreground">Loading...</p>
         </div>
-      </div>
+      </AuthShell>
     );
   }
 
   // Only show login form if user is not authenticated
   return(
-    <div className="grid min-h-svh lg:grid-cols-[1fr_2fr]">
-      <div className="flex flex-col gap-4 p-6 md:p-10">
-        <div className="flex justify-center gap-2 md:justify-start">
-          <a href="/" className="flex items-center gap-2 self-center font-medium">
-            <div className="flex size-6 items-center justify-center rounded-md bg-emerald-500 text-primary-foreground">
-              <AudioLines className="size-4" />
-            </div>
-              {TEXTS.APP_NAME}
-          </a>
-        </div>
-        <div className="flex flex-1 items-center justify-center">
-          <div className="w-full max-w-xs">
-            <LoginForm />
-          </div>
-        </div>
-      </div>
-      <div className="relative hidden bg-muted lg:block">
-        <div className="w-full h-full">
+    <AuthShell
+      visual={
+        <div className="h-full w-full">
           <FloatingLines
             linesGradient={["#064e3b", "#059669", "#10b981"]}
             animationSpeed={1}
@@ -95,7 +66,9 @@ export default function Login() {
             middleWavePosition={undefined}          
           />
         </div>
-      </div>
-    </div>
+      }
+    >
+      <LoginForm />
+    </AuthShell>
   )
 }

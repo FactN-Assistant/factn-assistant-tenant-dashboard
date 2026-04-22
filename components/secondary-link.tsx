@@ -1,13 +1,24 @@
-import Link from "next/link";
+import Link from "next/link"
+
+import { buttonVariants } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
 interface Props {
-  title: String,
-  href: string,
+  title: string
+  href: string
+  className?: string
 }
 
 export default function SecondaryLink(props: Props) {
   return (
-    <Link href={props.href} className="border py-2 px-3 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200 ease-in-out">
+    <Link
+      href={props.href}
+      className={cn(
+        buttonVariants({ variant: "outline", size: "lg" }),
+        "rounded-full border-border/70 bg-background/70 px-4 backdrop-blur-md",
+        props.className
+      )}
+    >
       {props.title}
     </Link>
   )

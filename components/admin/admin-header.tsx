@@ -17,29 +17,33 @@ export function AdminHeader() {
   const [showCreateModal, setShowCreateModal] = useState(false)
 
   return (
-    <header className="sticky top-0 z-50 flex w-full items-center border-b bg-background pr-3">
-      <div className="flex h-(--header-height) w-full items-center justify-start gap-2">
-        <div className="flex flex-row h-full items-center justify-center px-2 gap-2">
+    <header className="sticky top-0 z-50 px-3 py-3 sm:px-4">
+      <div className="brand-panel flex min-h-(--header-height) w-full flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-4">
+        <div className="flex min-w-0 items-center gap-2">
           <Button
-            className="h-8 w-8"
+            className="h-9 w-9 rounded-full"
             variant="ghost"
             size="icon"
             onClick={toggleSidebar}
           >
             <SidebarIcon />
           </Button>
-          <Separator orientation="vertical" className="mr-2 h-full" />
+          <Separator orientation="vertical" className="hidden h-8 sm:block" />
+          <div className="hidden min-w-0 sm:block">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Workspace</p>
+            <p className="truncate text-sm text-muted-foreground">Project controls and live operational metrics</p>
+          </div>
         </div>
-        <div className="flex flex-row gap-2 items-center justify-center">
-          <LoggedUser/>
-          <p>/</p>
+
+        <div className="flex w-full flex-wrap items-center justify-end gap-2 lg:w-auto">
+          <LoggedUser />
           <ProjectSelector />
-          <Button onClick={() => setShowCreateModal(true)}>
+          <Button onClick={() => setShowCreateModal(true)} className="rounded-full px-4">
             Create a new project
           </Button>
+          <Logout />
         </div>
       </div>
-      <Logout />
 
       <CreateProjectModal
         isOpen={showCreateModal}

@@ -29,15 +29,15 @@ export default async function DashboardLayout({
 
   return (
     <>
-    <div className="[--header-height:calc(--spacing(14))]">
-        <SidebarProvider className="flex flex-col">
+    <div className="brand-shell [--header-height:calc(--spacing(18))] min-h-screen">
+        <SidebarProvider className="flex min-h-screen flex-col">
         <TooltipProvider delayDuration={0}>
           <AdminHeader />
 
           <div className="flex flex-1">
-            <AppSidebar />
+            <AppSidebar variant="inset" collapsible="icon" />
             <SidebarInset>
-              <main className="w-full">
+              <main className="w-full pb-8">
                 {children}
               </main>
             </SidebarInset>

@@ -1,5 +1,7 @@
 'use client'
 
+import Link from "next/link"
+
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -64,7 +66,7 @@ export function LoginForm({className, ...props}: React.ComponentProps<"form">) {
     >
       <FieldGroup>
         <div className="flex flex-col items-center gap-1 text-center">
-          <h1 className="text-2xl font-bold">Login to your account</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Login to your account</h1>
           <p className="text-sm text-balance text-muted-foreground">
             Enter your email below to login to your account
           </p>
@@ -87,9 +89,9 @@ export function LoginForm({className, ...props}: React.ComponentProps<"form">) {
         <Field>
           <div className="flex items-center">
             <FieldLabel htmlFor="password">Password</FieldLabel>
-            <a href="#" className="ml-auto text-sm underline-offset-4 hover:underline text-neutral-500"> 
+            <Link href="#" className="ml-auto text-sm text-muted-foreground underline-offset-4 hover:text-primary hover:underline"> 
               Forgot your password?
-            </a>
+            </Link>
           </div>
           <div className="relative"> 
             <Input
@@ -122,7 +124,7 @@ export function LoginForm({className, ...props}: React.ComponentProps<"form">) {
         <Field>
           <Button 
             type="submit" 
-            className="h-10 bg-emerald-600 text-neutral-100 hover:bg-emerald-700" 
+            className="h-10 shadow-[0_20px_40px_-24px_color-mix(in_oklab,var(--primary)_75%,transparent)]" 
             size={"lg"} 
             disabled={isLoading}
           >
@@ -132,9 +134,9 @@ export function LoginForm({className, ...props}: React.ComponentProps<"form">) {
         <Field>
           <FieldDescription className="text-center">
             Don&apos;t have an account?{" "}
-            <a href="signup" className="underline underline-offset-4">
+            <Link href="/auth/signup" className="underline underline-offset-4">
               Sign up
-            </a>
+            </Link>
           </FieldDescription>
         </Field>
       </FieldGroup>

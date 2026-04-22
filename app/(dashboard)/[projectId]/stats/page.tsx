@@ -104,14 +104,16 @@ export default function Stats() {
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
       {/* Page header */}
-      <div>
+      <div className="brand-panel px-5 py-5 sm:px-6">
         <h1 className="text-2xl font-heading font-semibold tracking-tight">
           Usage &amp; Statistics
         </h1>
+        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+          Monitor how each project is performing across session volume, token consumption, status distribution, and recent activity.
+        </p>
         {usage && (
-          <p className="text-sm text-muted-foreground mt-1">
-            {new Date(usage.since).toLocaleDateString()} –{" "}
-            {new Date(usage.until).toLocaleDateString()}
+          <p className="mt-3 text-xs font-medium uppercase tracking-[0.18em] text-primary">
+            {new Date(usage.since).toLocaleDateString()} – {new Date(usage.until).toLocaleDateString()}
           </p>
         )}
       </div>
@@ -121,7 +123,7 @@ export default function Stats() {
       
 
       {/* Charts Row 1 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {/* Sessions per day */}
         <SessionsPerdayChart isLoading={isLoading} dailySessionsData={dailySessionsData} sessionsChartConfig={sessionsChartConfig} />
 
@@ -130,7 +132,7 @@ export default function Stats() {
       </div>
 
       {/* ── Charts Row 2 ──────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {/* Token usage area chart */}
         <TokenUsagePerSessionChart isLoading={isLoading} tokensChartConfig={tokensChartConfig} tokenData={tokenData} />
 

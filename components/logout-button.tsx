@@ -49,7 +49,8 @@ export default function LogoutButton() {
 
   return (
     <Button
-      className="border text-neutral-100 bg-rose-600 hover:bg-rose-700 "
+      className="rounded-full"
+      variant="destructive"
       onClick={handleClick}
       size={"lg"}
       disabled={isLoggingOut}

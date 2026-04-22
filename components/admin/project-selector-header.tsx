@@ -14,8 +14,6 @@ import { Skeleton } from "../ui/skeleton";
 export default function ProjectSelector() {
   const { projects, selectedProject, isLoadingList, selectProject } = useProject();
 
-  console.log(projects)
-
   // ── Loading skeleton ───────────────────────────────────────
   if (isLoadingList) {
     return <Skeleton className="h-8 w-36 rounded-full" />;
@@ -35,7 +33,7 @@ export default function ProjectSelector() {
       value={selectedProject?.project_id ?? ""}
       onValueChange={(id) => selectProject(id)}
     >
-      <SelectTrigger className="pl-3 pr-2 rounded-full">
+      <SelectTrigger className="h-10 min-w-44 rounded-full border-border/70 bg-background/70 pl-4 pr-3 backdrop-blur-sm">
         <SelectValue placeholder="Select a project" />
       </SelectTrigger>
       <SelectContent>

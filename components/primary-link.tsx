@@ -1,13 +1,24 @@
-import Link from "next/link";
+import Link from "next/link"
+
+import { buttonVariants } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
 interface Props {
-  title: String,
-  href: string,
+  title: string
+  href: string
+  className?: string
 }
 
 export default function PrimaryLink(props: Props) {
   return (
-    <Link href={props.href} className="border py-2 px-3 rounded-full bg-green-700 hover:bg-green-600 transition-all duration-200 ease-in-out">
+    <Link
+      href={props.href}
+      className={cn(
+        buttonVariants({ variant: "default", size: "lg" }),
+        "rounded-full px-4 shadow-[0_20px_40px_-24px_color-mix(in_oklab,var(--primary)_75%,transparent)]",
+        props.className
+      )}
+    >
       {props.title}
     </Link>
   )

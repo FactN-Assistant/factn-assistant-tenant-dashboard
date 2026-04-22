@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Sparkles } from "lucide-react";
+
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useProject } from "@/hooks/useProject";
@@ -11,7 +13,6 @@ export default function OnboardingPage() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
   const { projects, isLoadingList, createProjectMutation } = useProject();
-  const [modalOpen, setModalOpen] = useState(false);
 
   // Redirect unauthenticated users to login
   useEffect(() => {
@@ -36,12 +37,7 @@ export default function OnboardingPage() {
     }
   }, [user, authLoading, isLoadingList, projects, router]);
 
-  // Show the create modal once we know the user is authenticated with no projects
-  useEffect(() => {
-    if (!authLoading && !isLoadingList && user && projects.length === 0) {
-      setModalOpen(true);
-    }
-  }, [user, authLoading, isLoadingList, projects]);
+  const modalOpen = !authLoading && !isLoadingList && !!user && projects.length === 0;
 
   if (authLoading || isLoadingList) {
     return (
@@ -62,24 +58,29 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-8 text-center">
-      <div className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">
+    <div className="brand-shell flex min-h-screen items-center justify-center px-4 py-8 sm:px-6">
+      <div className="brand-panel flex w-full max-w-2xl flex-col items-center gap-6 p-8 text-center sm:p-10">
+        <div className="flex size-14 items-center justify-center rounded-3xl bg-primary/12 text-primary">
+          <Sparkles className="size-7" />
+        </div>
+        <div className="space-y-2">
+          <h1 className="text-2xl font-semibold tracking-tight">
           Welcome to FACTn Assistant
-        </h1>
-        <p className="text-muted-foreground text-sm">
+          </h1>
+          <p className="text-muted-foreground text-sm">
           Create your first project to get started.
-        </p>
-      </div>
+          </p>
+        </div>
 
-      <CreateProjectModal
-        isOpen={modalOpen}
-        onOpenChange={() => {
-          // Keep modal open — a project is required to proceed
-        }}
-        onSave={handleCreate}
-        isSubmitting={createProjectMutation.isPending}
-      />
+        <CreateProjectModal
+          isOpen={modalOpen}
+          onOpenChange={() => {
+            // Keep modal open — a project is required to proceed
+          }}
+          onSave={handleCreate}
+          isSubmitting={createProjectMutation.isPending}
+        />
+      </div>
     </div>
   );
 }

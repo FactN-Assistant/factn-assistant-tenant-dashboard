@@ -25,12 +25,10 @@ export default function MainLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="flex flex-col items-center">
-      <HomeHeader/>
-      <ThemeToggler className="fixed bottom-4 left-1 z-50" />
-      <main className="mt-12 border w-7xl max-w-7xl mx-auto">
-        {children}
-      </main>
+    <div className="brand-shell min-h-screen">
+      <HomeHeader />
+      <ThemeToggler className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 sm:left-6 sm:translate-x-0" />
+      <main className="relative pt-24 sm:pt-28">{children}</main>
     </div>
   );
 }

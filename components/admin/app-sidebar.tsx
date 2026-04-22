@@ -3,43 +3,30 @@
 import * as React from "react"
 import { useParams } from "next/navigation"
 import {
-  AudioLines,
   BookOpen,
   ChartArea,
   FileText,
-  Frame,
-  Hammer,
   KeyRound,
   LifeBuoy,
-  Map,
   MicVocal,
   MonitorCog,
-  PieChart,
   Play,
   Send,
   Settings,
-  Waves,
   Wrench,
 } from "lucide-react"
 
+import BrandMark from "@/components/brand/brand-mark"
 
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarGroup,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { NavMain } from "./nav-main"
-import { NavProjects } from "./nav-projects"
 import { NavSecondary } from "./nav-secondary"
-import { ProjectSelector } from "./nav-user"
-import { TEXTS } from "@/lib/constants"
-import { Separator } from "@/components/ui/separator"
 import CustomSidebarItem from "./custom-sidebar-item"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -107,45 +94,30 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   ]
   return (
     <Sidebar
-      className="top-(--header-height) h-[calc(100svh-var(--header-height))]!"
+      className="top-(--header-height) h-[calc(100svh-var(--header-height))]! px-3 pb-3"
       {...props}
     >
       <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <a href="#">
-                <div className="flex size-6 items-center justify-center rounded-md bg-emerald-500 text-primary-foreground">
-                  <AudioLines className="size-4" />
-                </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium"> {TEXTS.APP_NAME} </span>
-                  <span className="truncate text-xs">Chat-bot as a Service</span>
-                </div>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-
-        {/* <Separator />
-        <SidebarMenu>
-          <ProjectSelector user={data.user} />
-        </SidebarMenu>
-        <Separator /> */}
-
+        <div className="brand-subtle-panel px-3 py-3">
+          <BrandMark compact={false} subtitle="Command center for multi-tenant AI delivery" />
+        </div>
       </SidebarHeader>
       <SidebarContent>
-
-        <CustomSidebarItem href={"/dashboard/getstarted"} title={"Get Started"} icon={BookOpen} />
+        <div className="brand-subtle-panel p-2">
+          <SidebarMenu>
+            <CustomSidebarItem href={"/dashboard/getstarted"} title={"Get Started"} icon={BookOpen} />
+          </SidebarMenu>
+        </div>
         
 
         <NavMain items={general} label="General" />
         <NavMain items={navMain} label="Project Configs" />
-        {/* <NavProjects projects={data.projects} /> */}
         
       </SidebarContent>
       <SidebarFooter>
-        <NavSecondary items={navSecondary} />
+        <div className="brand-subtle-panel p-2">
+          <NavSecondary items={navSecondary} />
+        </div>
       </SidebarFooter>
     </Sidebar>
   )

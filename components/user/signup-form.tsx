@@ -1,5 +1,7 @@
 'use client'
 
+import Link from "next/link"
+
 import { cn, getPasswordStrength } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -79,7 +81,7 @@ export function SignupForm({className, ...props}: React.ComponentProps<"form">) 
     >
       <FieldGroup>
         <div className="flex flex-col items-center gap-1 text-center">
-          <h1 className="text-2xl font-bold">Create your account</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Create your account</h1>
           <p className="text-sm text-balance text-muted-foreground">
             Fill in the form below to create your account
           </p>
@@ -191,7 +193,7 @@ export function SignupForm({className, ...props}: React.ComponentProps<"form">) 
         <Field>
           <Button 
             type="submit" 
-            className="h-10 bg-emerald-600 text-neutral-100 hover:bg-emerald-700"
+            className="h-10 shadow-[0_20px_40px_-24px_color-mix(in_oklab,var(--primary)_75%,transparent)]"
             size={"lg"} 
             disabled={isLoading}
           >
@@ -200,7 +202,7 @@ export function SignupForm({className, ...props}: React.ComponentProps<"form">) 
         </Field>
         <Field>
           <FieldDescription className="px-6 text-center">
-            Already have an account? <a href="login">Log in</a>
+            Already have an account? <Link href="/auth/login">Log in</Link>
           </FieldDescription>
         </Field>
       </FieldGroup>

@@ -9,9 +9,9 @@ export default function LoggedUser() {
   // Skeleton during initial hydration
   if (isLoading) {
     return (
-      <div className="flex flex-row gap-2 border border-neutral-800 rounded-full py-1 px-3 items-center justify-center bg-neutral-900 animate-pulse">
-        <div className="h-3 w-20 bg-neutral-700 rounded-full" />
-        <div className="h-3 w-10 bg-neutral-700 rounded-full" />
+      <div className="flex flex-row items-center justify-center gap-2 rounded-full border border-border/70 bg-background/70 px-3 py-2 animate-pulse">
+        <div className="h-3 w-20 rounded-full bg-muted" />
+        <div className="h-3 w-10 rounded-full bg-muted" />
       </div>
     );
   }
@@ -33,8 +33,8 @@ export default function LoggedUser() {
   const plan = PLAN_STYLES[user.plan] ?? PLAN_STYLES.free;
 
   return (
-    <div className="flex flex-row gap-2 border border-neutral-800 rounded-full py-1 pl-2 pr-1 items-center justify-center bg-neutral-900">
-      <p className="text-neutral-200 text-sm font-medium max-w-[120px] truncate">
+    <div className="flex flex-row items-center justify-center gap-2 rounded-full border border-border/70 bg-background/70 py-1.5 pl-2.5 pr-1.5 backdrop-blur-sm">
+      <p className="max-w-[120px] truncate text-sm font-medium text-foreground">
         {user.name}
       </p>
 
