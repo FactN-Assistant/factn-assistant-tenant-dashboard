@@ -3,19 +3,26 @@
  * --------------------
  * Hook that drives all project-related data fetching using TanStack Query.
  *
- * On mount it:
- *   1. Fetches GET /api/projects → populates the project list
- *   2. Uses the projectId from URL params (from useParams())
- *   3. Fetches GET /api/projects/{id} for the selected project's full details
+ * Data model
+ * ──────────
+ *   projects        — list of ProjectSummary (lightweight, no system_prompt /
+ *                     tools / voice config).  Fetched once via GET /api/projects.
+ *   selectedProject — full Project detail for the active project only.
+ *                     Fetched via GET /api/projects/{id} on demand.
  *
- * Calling selectProject(id) navigates to /dashboard/{id} for URL persistence.
+ * Auto-selection order
+ * ────────────────────
+ *   1. projectId from URL params  (deep-link / browser back)
+ *   2. Summary with the latest last_accessed timestamp
+ *   3. First project in the list
  *
- * All state is managed by React Query cache. Zustand is no longer needed.
+ * Selecting a new project navigates to /dashboard/{id}, which triggers a
+ * fresh detail fetch while previous detail is evicted from cache.
  */
 
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
@@ -23,29 +30,26 @@ import { useAuth } from "./useAuth";
 import { useFetch } from "./useFetch";
 import {
   projectSchema,
+  projectSummarySchema,
   usageSummarySchema,
   sessionsResponseSchema,
   type Project,
+  type ProjectSummary,
   type CreateProjectFormValues,
   type UsageSummary,
   type SessionsResponse,
 } from "@/lib/schemas/project-schemas";
 import { z } from "zod";
 
-export type { Project, CreateProjectFormValues, UsageSummary, SessionsResponse };
+export type { Project, ProjectSummary, CreateProjectFormValues, UsageSummary, SessionsResponse };
 
 const PROJECTS_LIST_KEY = ["projects", "list"];
-const SELECTED_PROJECT_ID_KEY = ["projects", "selectedId"];
 const PROJECT_DETAIL_KEY = ["projects", "detail"];
 const USAGE_KEY = ["projects", "usage"];
 const SESSIONS_KEY = ["projects", "sessions"];
 
 /**
  * Custom hook that manages all project operations via TanStack Query.
- *
- * Returns the exact same shape as the old Zustand-based version so
- * consuming components (prompt, tools, keys, voice-config, project-selector)
- * continue to work without changes.
  */
 export function useProject() {
   const { user } = useAuth();
@@ -57,7 +61,8 @@ export function useProject() {
   // Extract projectId from URL params (format: /dashboard/[projectId])
   const projectIdFromUrl = typeof params?.projectId === "string" ? params.projectId : null;
 
-  // ── 1. Fetch project list ──────────────────────────────────
+  // ── 1. Fetch project summary list ─────────────────────────
+  // Lightweight — only summary fields, no heavy config blobs.
 
   const {
     data: projects = [],
@@ -65,14 +70,14 @@ export function useProject() {
     error: listError,
   } = useQuery({
     queryKey: PROJECTS_LIST_KEY,
-    queryFn: async (): Promise<Project[]> => {
+    queryFn: async (): Promise<ProjectSummary[]> => {
       const res = await fetch("/api/projects", { credentials: "include" });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.detail ?? "Failed to load projects");
       }
       const data = await res.json();
-      return z.array(projectSchema).parse(data);
+      return z.array(projectSummarySchema).parse(data);
     },
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
@@ -81,11 +86,23 @@ export function useProject() {
   });
 
   // ── 2. Determine effective project ID ──────────────────────
-  // Use URL param if available, otherwise use first project
-  
-  const effectiveSelectedId = projectIdFromUrl || projects[0]?.project_id || null;
+  // Priority: URL param → most-recently accessed → first in list.
 
-  // ── 3. Fetch detail for the selected project ───────────────
+  const effectiveSelectedId = useMemo(() => {
+    if (projectIdFromUrl) return projectIdFromUrl;
+    if (projects.length === 0) return null;
+
+    // Find the project with the latest last_accessed timestamp.
+    const mostRecent = projects.reduce<ProjectSummary | null>((best, p) => {
+      if (!p.last_accessed) return best;
+      if (!best || !best.last_accessed) return p;
+      return p.last_accessed > best.last_accessed ? p : best;
+    }, null);
+
+    return mostRecent?.project_id ?? projects[0].project_id;
+  }, [projectIdFromUrl, projects]);
+
+  // ── 3. Fetch full detail for the selected project only ─────
 
   const {
     data: selectedProject = null,
@@ -110,13 +127,16 @@ export function useProject() {
     retry: false,
   });
 
-  // ── 4. selectProject: navigate to the project URL ──────────
+  // ── 4. selectProject: navigate and evict stale detail cache ─
 
   const selectProject = useCallback(
     (projectId: string) => {
+      // Remove the previous project's full detail from cache immediately so
+      // memory holds only one full project at a time.
+      queryClient.removeQueries({ queryKey: PROJECT_DETAIL_KEY, exact: false });
       router.push(`/${projectId}`);
     },
-    [router]
+    [router, queryClient]
   );
 
   // ── 5. Update system prompt mutation ───────────────────────
@@ -186,7 +206,6 @@ export function useProject() {
     },
     onSuccess: (newProject) => {
       queryClient.invalidateQueries({ queryKey: PROJECTS_LIST_KEY });
-      queryClient.setQueryData(SELECTED_PROJECT_ID_KEY, newProject.project_id);
       toast.success(`Project "${newProject.name}" created`);
     },
     onError: (err: Error) => {

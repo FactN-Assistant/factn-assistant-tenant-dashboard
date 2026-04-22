@@ -105,7 +105,7 @@ export function useAuth() {
     },
     onSuccess: (data) => {
       queryClient.setQueryData(AUTH_QUERY_KEY, data);
-      router.push("/dashboard");
+      router.push("/");
     },
     // onError is handled in the component
   });

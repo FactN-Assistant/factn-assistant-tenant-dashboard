@@ -53,7 +53,6 @@ export function LoginForm({className, ...props}: React.ComponentProps<"form">) {
   }, [loginMutation.isSuccess, reset]);
 
   const onSubmit = async (data: LoginFormData) => {
-    console.log("login data:", data)
     loginMutation.mutate(data);
   };
 

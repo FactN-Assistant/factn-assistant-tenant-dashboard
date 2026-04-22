@@ -7,6 +7,17 @@
 
 import { z } from "zod";
 
+// Project summary — returned by GET /api/projects (list endpoint).
+// Intentionally lightweight: no system_prompt, tools, voice/vad config, etc.
+export const projectSummarySchema = z.object({
+  project_id:    z.string(),
+  name:          z.string(),
+  description:   z.string(),
+  is_active:     z.boolean(),
+  updated_at:    z.string(),
+  last_accessed: z.string().nullable(),
+});
+
 // Voice & VAD config
 export const voiceConfigSchema = z.object({
   enabled: z.boolean(),
@@ -104,6 +115,7 @@ export const sessionsResponseSchema = z.object({
   skip: z.number(),
 });
 
+export type ProjectSummary = z.infer<typeof projectSummarySchema>;
 export type VoiceConfig = z.infer<typeof voiceConfigSchema>;
 export type VADConfig = z.infer<typeof vadConfigSchema>;
 export type Project = z.infer<typeof projectSchema>;
