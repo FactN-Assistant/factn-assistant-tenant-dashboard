@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useParams } from "next/navigation"
 import {
   AudioLines,
   BookOpen,
@@ -41,52 +42,53 @@ import { TEXTS } from "@/lib/constants"
 import { Separator } from "@/components/ui/separator"
 import CustomSidebarItem from "./custom-sidebar-item"
 
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-  general: [
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const params = useParams()
+  const projectId = typeof params?.projectId === "string" ? params.projectId : ""
+
+  // Build navigation items with the current project ID
+  const general = [
     {
       title: "Project Stats",
-      url: "/dashboard/stats",
+      url: `/${projectId}/stats`,
       icon: ChartArea,
     },
     {
       title: "Playground",
-      url: "/dashboard/playground",
+      url: `/${projectId}/playground`,
       icon: Play,
     },
-  ],
-  navMain: [
+  ]
+
+  const navMain = [
     {
       title: "Project Info",
-      url: "/dashboard/info",
+      url: `/${projectId}/info`,
       icon: FileText,
     },
     {
       title: "System Prompt",
-      url: "/dashboard/prompt",
+      url: `/${projectId}/prompt`,
       icon: MonitorCog,
     },
     {
       title: "Tools",
-      url: "/dashboard/tools",
+      url: `/${projectId}/tools`,
       icon: Wrench,
     },
     {
       title: "Voice Config",
-      url: "/dashboard/voice-config",
+      url: `/${projectId}/voice-config`,
       icon: MicVocal,
     },
     {
       title: "API Keys",
-      url: "/dashboard/keys",
+      url: `/${projectId}/keys`,
       icon: KeyRound,
     },
-  ],
-  navSecondary: [
+  ]
+
+  const navSecondary = [
     {
       title: "Settings",
       url: "#",
@@ -102,28 +104,7 @@ const data = {
       url: "#",
       icon: Send,
     },
-  ],
-
-  projects: [
-    {
-      name: "Design Engineering",
-      url: "/dashboard/system_prompt",
-      icon: Frame,
-    },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: Map,
-    },
-  ],
-}
-
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  ]
   return (
     <Sidebar
       className="top-(--header-height) h-[calc(100svh-var(--header-height))]!"
@@ -158,13 +139,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <CustomSidebarItem href={"/dashboard/getstarted"} title={"Get Started"} icon={BookOpen} />
         
 
-        <NavMain items={data.general} label="General" />
-        <NavMain items={data.navMain} label="Project Configs" />
+        <NavMain items={general} label="General" />
+        <NavMain items={navMain} label="Project Configs" />
         {/* <NavProjects projects={data.projects} /> */}
         
       </SidebarContent>
       <SidebarFooter>
-        <NavSecondary items={data.navSecondary} />
+        <NavSecondary items={navSecondary} />
       </SidebarFooter>
     </Sidebar>
   )

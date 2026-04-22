@@ -9,8 +9,8 @@ import { ToolFormValues } from "@/lib/schemas/tool-schemas"
 import { useTools, type ToolResponse } from "@/hooks/useTools"
 import ToolCard from "@/components/admin/tool-card"
 import CreateToolModal from "./create-modal"
-import EditToolModal from "./edit-modal"
 import { useProject } from "@/hooks/useProject"
+import EditToolModal from "./edit-modal"
 
 export default function Tools() {
   const { selectedProject } = useProject()

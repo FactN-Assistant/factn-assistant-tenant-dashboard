@@ -1,7 +1,7 @@
 import ToolForm from "@/components/admin/tool-form"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
-import { ToolFormValues, ToolParameter, ToolResponse } from "@/lib/schemas/tool-schemas"
+import { ToolFormValues, ToolResponse } from "@/lib/schemas/tool-schemas"
 import { jsonSchemaToParameters } from "@/hooks/useTools"
 import { Pencil } from "lucide-react"
 

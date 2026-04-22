@@ -5,10 +5,10 @@
  *
  * On mount it:
  *   1. Fetches GET /api/projects → populates the project list
- *   2. Auto-selects the first project (or keeps the previously selected one)
+ *   2. Uses the projectId from URL params (from useParams())
  *   3. Fetches GET /api/projects/{id} for the selected project's full details
  *
- * Calling selectProject(id) switches the active project and re-fetches its details.
+ * Calling selectProject(id) navigates to /dashboard/{id} for URL persistence.
  *
  * All state is managed by React Query cache. Zustand is no longer needed.
  */
@@ -16,6 +16,7 @@
 "use client";
 
 import { useCallback } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { useAuth } from "./useAuth";
@@ -48,8 +49,13 @@ const SESSIONS_KEY = ["projects", "sessions"];
  */
 export function useProject() {
   const { user } = useAuth();
+  const params = useParams();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const fetchWithRefresh = useFetch();
+
+  // Extract projectId from URL params (format: /dashboard/[projectId])
+  const projectIdFromUrl = typeof params?.projectId === "string" ? params.projectId : null;
 
   // ── 1. Fetch project list ──────────────────────────────────
 
@@ -74,20 +80,10 @@ export function useProject() {
     retry: false,
   });
 
-  // ── 2. Read / write selectedProjectId from query cache ─────
-
-  const { data: selectedProjectId } = useQuery<string | null>({
-    queryKey: SELECTED_PROJECT_ID_KEY,
-    queryFn: () => null,
-    enabled: false, // never fetches — purely client-side state
-    staleTime: Infinity,
-  });
-
-  // Auto-select: if no project is selected and the list is loaded, pick the first
-  const effectiveSelectedId =
-    selectedProjectId && projects.some((p) => p.project_id === selectedProjectId)
-      ? selectedProjectId
-      : projects[0]?.project_id ?? null;
+  // ── 2. Determine effective project ID ──────────────────────
+  // Use URL param if available, otherwise use first project
+  
+  const effectiveSelectedId = projectIdFromUrl || projects[0]?.project_id || null;
 
   // ── 3. Fetch detail for the selected project ───────────────
 
@@ -114,13 +110,13 @@ export function useProject() {
     retry: false,
   });
 
-  // ── 4. selectProject: switch the active project ────────────
+  // ── 4. selectProject: navigate to the project URL ──────────
 
   const selectProject = useCallback(
     (projectId: string) => {
-      queryClient.setQueryData(SELECTED_PROJECT_ID_KEY, projectId);
+      router.push(`/${projectId}`);
     },
-    [queryClient]
+    [router]
   );
 
   // ── 5. Update system prompt mutation ───────────────────────

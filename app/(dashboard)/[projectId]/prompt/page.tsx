@@ -1,6 +1,6 @@
 'use client'
 
-import { MonitorCog, Save } from "lucide-react"
+import { MonitorCog } from "lucide-react"
 import { useForm, SubmitHandler } from "react-hook-form"
 import { useEffect } from "react"
 
@@ -95,7 +95,7 @@ export default function PromptConfig() {
               
               <Textarea 
                 id="systemPrompt" 
-                className="min-h-[300px] mt-3 font-mono text-sm leading-relaxed resize-none border hover:border-green-700 focus-visible:ring-1 focus-visible:ring-green-600 focus-visible:border-none" 
+                className="min-h-75 mt-3 font-mono text-sm leading-relaxed resize-none border hover:border-green-700 focus-visible:ring-1 focus-visible:ring-green-600 focus-visible:border-none" 
                 placeholder="e.g. You are a helpful assistant that specializes in data analysis..." 
                 disabled={isSaving}
                 {...register("systemPrompt", { required: "System prompt is required" })}

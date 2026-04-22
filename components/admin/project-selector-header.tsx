@@ -14,6 +14,8 @@ import { Skeleton } from "../ui/skeleton";
 export default function ProjectSelector() {
   const { projects, selectedProject, isLoadingList, selectProject } = useProject();
 
+  console.log(projects)
+
   // ── Loading skeleton ───────────────────────────────────────
   if (isLoadingList) {
     return <Skeleton className="h-8 w-36 rounded-full" />;

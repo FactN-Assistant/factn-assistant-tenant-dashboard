@@ -48,7 +48,7 @@ export default function Stats() {
   const sessions = sessionsData?.sessions ?? []
   const isLoading = isLoadingUsage || isLoadingSessions
 
-  // ── Derived chart data ─────────────────────────────────────
+  // ── Derived chart data ─────────────────────────────
 
   // Status distribution for pie chart
   const statusCounts = sessions.reduce<Record<string, number>>((acc, s) => {

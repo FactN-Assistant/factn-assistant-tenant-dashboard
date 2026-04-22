@@ -18,11 +18,11 @@ import { Separator } from "@/components/ui/separator"
 import { type ApiKey, type CreatedKey, type CreateKeyForm } from "@/lib/schemas/key-schemas"
 import KeyRow from "@/components/admin/key-row"
 import CreateKeyModal from "./create-key-modal"
-import KeyRevealModal from "./key-reveal-modal"
-import RevokeDialog from "./revoke-dialog"
-import EphemeralTokenSection from "./ephemeral-token-section"
 import { useProject } from "@/hooks/useProject"
 import { useKeys } from "@/hooks/useKeys"
+import KeyRevealModal from "./key-reveal-modal"
+import EphemeralTokenSection from "./ephemeral-token-section"
+import RevokeDialog from "./revoke-dialog"
 
 export default function ApiKeys() {
   const { selectedProject } = useProject()
