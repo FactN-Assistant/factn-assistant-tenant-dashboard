@@ -11,6 +11,13 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
+import { CLOSE_CODES } from '@/lib/constants'
+import type {
+  AudioSettings,
+  ChatMessage,
+  ConnSettings,
+  ConnState,
+} from '@/lib/schemas/playground-schemas'
 import { cn } from '@/lib/utils'
 import {
   Mic,
@@ -18,8 +25,6 @@ import {
   Send,
   Wifi,
   WifiOff,
-  Volume2,
-  VolumeX,
   Trash2,
   Terminal,
   Radio,
@@ -60,38 +65,6 @@ class PCMProcessor extends AudioWorkletProcessor {
 }
 registerProcessor('factn-pcm-processor', PCMProcessor);
 `
-
-// ─────────────────────────────────────────────────────────────────
-//  Types
-// ─────────────────────────────────────────────────────────────────
-type ConnState = 'disconnected' | 'connecting' | 'connected' | 'error'
-
-interface ChatMessage {
-  id: string
-  direction: 'sent' | 'received' | 'system'
-  type: string
-  ts: string
-  json?: unknown          // JSON messages — displayed syntax-highlighted
-  systemText?: string     // System event text
-  isAudio?: boolean       // Audio indicator message
-  audioDirection?: 'sent' | 'received'
-  audioBytes?: number
-}
-
-interface ConnSettings {
-  serverUrl: string
-  authType: 'api_key' | 'token'
-  authValue: string
-  sessionId: string
-}
-
-interface AudioSettings {
-  inputRate: number
-  outputRate: number
-  chunkSize: number
-  autoPlay: boolean
-  showInChat: boolean
-}
 
 // ─────────────────────────────────────────────────────────────────
 //  Utilities
@@ -158,17 +131,6 @@ const TYPE_BADGE: Record<string, string> = {
 
 function typeBadgeCls(type: string) {
   return TYPE_BADGE[type] ?? 'bg-zinc-800 text-zinc-400 border-zinc-700'
-}
-
-const CLOSE_CODES: Record<number, string> = {
-  4001: 'Invalid API key / token',
-  4002: 'Project not found or inactive',
-  4003: 'Rate limit exceeded',
-  4004: 'Max concurrent sessions reached',
-  4005: 'Token already redeemed or expired',
-  4006: 'Origin not allowed (CORS)',
-  4007: 'Tenant account suspended',
-  4008: 'Daily token quota exceeded',
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -256,7 +218,12 @@ function MessageBubble({
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
               <AudioBars color="text-emerald-400" />
-              <span className="text-emerald-300">🔊 PCM audio — {fmtBytes(msg.audioBytes ?? 0)}</span>
+              <span className="text-emerald-300">
+                🔊 PCM audio — {fmtBytes(msg.audioBytes ?? 0)}
+                {msg.audioFrameCount && msg.audioFrameCount > 1
+                  ? ` (${msg.audioFrameCount} frames)`
+                  : ''}
+              </span>
             </div>
             <button
               onClick={() => onReplay(msg.id)}
@@ -306,6 +273,7 @@ export default function PlaygroundPage() {
     chunkSize: 1600,
     autoPlay: true,
     showInChat: true,
+    accumulateAudioFrames: true,
   })
   // Ref mirror for use in WS / worklet callbacks (avoid stale closure)
   const audioSettingsRef = useRef(audioSettings)
@@ -332,10 +300,15 @@ export default function PlaygroundPage() {
   const chunkNumRef = useRef(0)
 
   // ── Audio playback ────────────────────────────────────────────
-  const [speakerEnabled, setSpeakerEnabled] = useState(false)
   const playCtxRef = useRef<AudioContext | null>(null)
   const playTimeRef = useRef(0)
   const audioBufsRef = useRef<Map<string, Int16Array>>(new Map())
+  const recvAudioAccumulatorRef = useRef<{
+    msgId: string
+    frameCount: number
+    totalBytes: number
+  } | null>(null)
+  const recvAudioAccumulatorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // ── Auto-scroll ───────────────────────────────────────────────
   useEffect(() => {
@@ -349,8 +322,21 @@ export default function PlaygroundPage() {
       recordCtxRef.current?.close()
       playCtxRef.current?.close()
       if (uptimeTimerRef.current) clearInterval(uptimeTimerRef.current)
+      if (recvAudioAccumulatorTimerRef.current) {
+        clearTimeout(recvAudioAccumulatorTimerRef.current)
+      }
     }
   }, [])
+
+  useEffect(() => {
+    if (!audioSettings.accumulateAudioFrames) {
+      recvAudioAccumulatorRef.current = null
+      if (recvAudioAccumulatorTimerRef.current) {
+        clearTimeout(recvAudioAccumulatorTimerRef.current)
+        recvAudioAccumulatorTimerRef.current = null
+      }
+    }
+  }, [audioSettings.accumulateAudioFrames])
 
   // ── Uptime helpers ────────────────────────────────────────────
   const startUptime = useCallback(() => {
@@ -427,13 +413,23 @@ export default function PlaygroundPage() {
     [addMsg]
   )
 
-  // Interrupt does NOT add a JSON message automatically (raw send + manual log)
-  const sendInterrupt = useCallback(() => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return
-    const obj = { type: 'interrupt' }
-    wsRef.current.send(JSON.stringify(obj))
-    addMsg({ direction: 'sent', type: 'interrupt', json: obj })
-  }, [addMsg])
+  const resetRecvAudioAccumulator = useCallback(() => {
+    recvAudioAccumulatorRef.current = null
+    if (recvAudioAccumulatorTimerRef.current) {
+      clearTimeout(recvAudioAccumulatorTimerRef.current)
+      recvAudioAccumulatorTimerRef.current = null
+    }
+  }, [])
+
+  const armRecvAudioAccumulatorReset = useCallback(() => {
+    if (recvAudioAccumulatorTimerRef.current) {
+      clearTimeout(recvAudioAccumulatorTimerRef.current)
+    }
+    recvAudioAccumulatorTimerRef.current = setTimeout(() => {
+      recvAudioAccumulatorRef.current = null
+      recvAudioAccumulatorTimerRef.current = null
+    }, 450)
+  }, [])
 
   // ── Connect / disconnect ──────────────────────────────────────
   const connect = useCallback(() => {
@@ -474,17 +470,63 @@ export default function PlaygroundPage() {
         const int16 = new Int16Array(evt.data)
         setStats(prev => ({ ...prev, audioRecv: prev.audioRecv + 1 }))
         if (audioSettingsRef.current.showInChat) {
-          const id = addMsg({
-            direction: 'received',
-            type: 'audio_pcm',
-            isAudio: true,
-            audioDirection: 'received',
-            audioBytes: evt.data.byteLength,
-          })
-          audioBufsRef.current.set(id, int16)
+          if (audioSettingsRef.current.accumulateAudioFrames) {
+            const existing = recvAudioAccumulatorRef.current
+            if (existing) {
+              const nextFrameCount = existing.frameCount + 1
+              const nextBytes = existing.totalBytes + evt.data.byteLength
+              recvAudioAccumulatorRef.current = {
+                ...existing,
+                frameCount: nextFrameCount,
+                totalBytes: nextBytes,
+              }
+              const prev = audioBufsRef.current.get(existing.msgId)
+              if (prev) {
+                const merged = new Int16Array(prev.length + int16.length)
+                merged.set(prev, 0)
+                merged.set(int16, prev.length)
+                audioBufsRef.current.set(existing.msgId, merged)
+              }
+              setMessages(prev => prev.map(msg =>
+                msg.id === existing.msgId
+                  ? {
+                      ...msg,
+                      audioFrameCount: nextFrameCount,
+                      audioBytes: nextBytes,
+                    }
+                  : msg
+              ))
+            } else {
+              const id = addMsg({
+                direction: 'received',
+                type: 'audio_pcm',
+                isAudio: true,
+                audioDirection: 'received',
+                audioBytes: evt.data.byteLength,
+                audioFrameCount: 1,
+              })
+              recvAudioAccumulatorRef.current = {
+                msgId: id,
+                frameCount: 1,
+                totalBytes: evt.data.byteLength,
+              }
+              audioBufsRef.current.set(id, int16)
+            }
+            armRecvAudioAccumulatorReset()
+          } else {
+            const id = addMsg({
+              direction: 'received',
+              type: 'audio_pcm',
+              isAudio: true,
+              audioDirection: 'received',
+              audioBytes: evt.data.byteLength,
+            })
+            audioBufsRef.current.set(id, int16)
+          }
         }
         if (audioSettingsRef.current.autoPlay) playPCM(int16)
       } else {
+        resetRecvAudioAccumulator()
         // Text → JSON
         let obj: unknown
         try { obj = JSON.parse(evt.data as string) } catch { obj = { raw: evt.data } }
@@ -508,9 +550,20 @@ export default function PlaygroundPage() {
       setConnState('disconnected')
       setActiveSessionId('')
       stopUptime()
+      resetRecvAudioAccumulator()
       wsRef.current = null
     }
-  }, [connState, connSettings, addMsg, addSystem, startUptime, stopUptime, playPCM])
+  }, [
+    connState,
+    connSettings,
+    addMsg,
+    addSystem,
+    startUptime,
+    stopUptime,
+    playPCM,
+    armRecvAudioAccumulatorReset,
+    resetRecvAudioAccumulator,
+  ])
 
   // ── Send text ─────────────────────────────────────────────────
   const sendText = useCallback(() => {
@@ -626,22 +679,20 @@ export default function PlaygroundPage() {
     }
   }, [stopRecording])
 
+  const onVoiceHoldStart = useCallback((e?: React.TouchEvent | React.MouseEvent) => {
+    e?.preventDefault()
+    void startRecording()
+  }, [startRecording])
+
   // ── UI helpers ────────────────────────────────────────────────
   const isConnected = connState === 'connected'
-
-  const toggleSpeaker = useCallback(() => {
-    setSpeakerEnabled(prev => {
-      const next = !prev
-      sendRaw({ type: 'set_speaker', enabled: next })
-      return next
-    })
-  }, [sendRaw])
 
   const clearMessages = useCallback(() => {
     setMessages([])
     setStats({ msgs: 0, audioSent: 0, audioRecv: 0 })
     audioBufsRef.current.clear()
-  }, [])
+    resetRecvAudioAccumulator()
+  }, [resetRecvAudioAccumulator])
 
   // ── Render ────────────────────────────────────────────────────
   return (
@@ -721,6 +772,25 @@ export default function PlaygroundPage() {
           <div className="border-t border-zinc-800 p-3 bg-zinc-900/60 shrink-0 space-y-2">
             {/* Text row */}
             <div className="flex gap-2 items-end">
+              <button
+                onMouseDown={onVoiceHoldStart}
+                onTouchStart={onVoiceHoldStart}
+                disabled={!isConnected}
+                className={cn(
+                  'flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-semibold h-9.5 shrink-0',
+                  'border select-none transition-all disabled:opacity-40 disabled:cursor-not-allowed',
+                  isRecording
+                    ? 'bg-red-950/60 border-red-600 text-red-400 animate-pulse'
+                    : 'bg-zinc-800 border-zinc-700 text-zinc-300 hover:border-zinc-500'
+                )}
+              >
+                {isRecording
+                  ? <MicOff className="w-3.5 h-3.5" />
+                  : <Mic className="w-3.5 h-3.5" />
+                }
+                {isRecording ? 'Recording…' : 'Hold to Talk'}
+              </button>
+
               <textarea
                 ref={textareaRef}
                 value={textDraft}
@@ -757,69 +827,12 @@ export default function PlaygroundPage() {
               </Button>
             </div>
 
-            {/* Action row */}
-            <div className="flex items-center gap-2 flex-wrap">
-              {/* Push-to-talk */}
-              <button
-                onMouseDown={startRecording}
-                onTouchStart={e => { e.preventDefault(); startRecording() }}
-                disabled={!isConnected}
-                className={cn(
-                  'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold',
-                  'border select-none transition-all disabled:opacity-40 disabled:cursor-not-allowed',
-                  isRecording
-                    ? 'bg-red-950/60 border-red-600 text-red-400 animate-pulse'
-                    : 'bg-zinc-800 border-zinc-700 text-zinc-300 hover:border-zinc-500'
-                )}
-              >
-                {isRecording
-                  ? <MicOff className="w-3.5 h-3.5" />
-                  : <Mic className="w-3.5 h-3.5" />
-                }
-                {isRecording ? 'Recording…' : 'Hold to Talk'}
-              </button>
-
-              {/* Level meter */}
-              <div className="w-16 h-1.5 bg-zinc-700 rounded-full overflow-hidden shrink-0">
-                <div
-                  className="h-full bg-emerald-400 rounded-full transition-all duration-75"
-                  style={{ width: `${audioLevel}%` }}
-                />
-              </div>
-
-              <button
-                disabled={!isConnected}
-                onClick={() => sendRaw({ type: 'ping' })}
-                className="flex items-center gap-1 h-7 px-2.5 text-xs rounded-md border border-zinc-700 bg-zinc-800/60 text-zinc-400 hover:text-yellow-400 hover:border-yellow-700 hover:bg-yellow-950/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                <Zap className="w-3 h-3" /> ping
-              </button>
-
-              <button
-                disabled={!isConnected}
-                onClick={sendInterrupt}
-                className="h-7 px-2.5 text-xs rounded-md border border-zinc-700 bg-zinc-800/60 text-zinc-400 hover:text-red-400 hover:border-red-700 hover:bg-red-950/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                interrupt
-              </button>
-
-              <button
-                disabled={!isConnected}
-                onClick={toggleSpeaker}
-                className={cn(
-                  'flex items-center gap-1 h-7 px-2.5 text-xs rounded-md border transition-colors',
-                  'disabled:opacity-40 disabled:cursor-not-allowed',
-                  speakerEnabled
-                    ? 'border-violet-600 bg-violet-950/40 text-violet-400'
-                    : 'border-zinc-700 bg-zinc-800/60 text-zinc-400 hover:text-violet-400 hover:border-violet-700 hover:bg-violet-950/30'
-                )}
-              >
-                {speakerEnabled
-                  ? <Volume2 className="w-3 h-3" />
-                  : <VolumeX className="w-3 h-3" />
-                }
-                speaker: {speakerEnabled ? 'on' : 'off'}
-              </button>
+            {/* Level meter */}
+            <div className="w-full h-1.5 bg-zinc-700 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-emerald-400 rounded-full transition-all duration-75"
+                style={{ width: `${audioLevel}%` }}
+              />
             </div>
           </div>
         </div>
@@ -1031,6 +1044,25 @@ export default function PlaygroundPage() {
                   checked={audioSettings.showInChat}
                   onCheckedChange={v => setAudioSettings(p => ({ ...p, showInChat: v }))}
                 />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <Label className="text-xs text-zinc-400">Accumulate audio frames</Label>
+                <button
+                  type="button"
+                  onClick={() => setAudioSettings(p => ({
+                    ...p,
+                    accumulateAudioFrames: !p.accumulateAudioFrames,
+                  }))}
+                  className={cn(
+                    'h-7 px-2.5 rounded-full border text-[10px] font-semibold transition-colors',
+                    audioSettings.accumulateAudioFrames
+                      ? 'border-emerald-600 bg-emerald-900/40 text-emerald-400'
+                      : 'border-zinc-700 bg-zinc-800 text-zinc-400 hover:border-zinc-600'
+                  )}
+                >
+                  {audioSettings.accumulateAudioFrames ? 'ON' : 'OFF'}
+                </button>
               </div>
 
               <Separator className="bg-zinc-800" />

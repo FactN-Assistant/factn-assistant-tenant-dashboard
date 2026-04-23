@@ -160,3 +160,14 @@ export const PLAN_STYLES: Record<string, { bg: string; text: string; label: stri
   pro:        { bg: "bg-purple-600/40",   text: "text-purple-300",  label: "Pro"        },
   enterprise: { bg: "bg-amber-600/40",    text: "text-amber-300",   label: "Enterprise" },
 };
+
+export const CLOSE_CODES: Record<number, string> = {
+  4001: "Invalid API key / token",
+  4002: "Project not found or inactive",
+  4003: "Rate limit exceeded",
+  4004: "Max concurrent sessions reached",
+  4005: "Token already redeemed or expired",
+  4006: "Origin not allowed (CORS)",
+  4007: "Tenant account suspended",
+  4008: "Daily token quota exceeded",
+};
