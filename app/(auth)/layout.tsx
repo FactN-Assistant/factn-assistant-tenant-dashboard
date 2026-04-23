@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "../../app/globals.css";
+import { ThemeToggler } from "@/components/theme-toggler";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,6 +29,7 @@ export default async function AuthLayout({
       <main className="w-full min-h-screen">
         {children}
       </main>
+      <ThemeToggler className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 sm:left-6 sm:translate-x-0" />
     </>
   )
 }

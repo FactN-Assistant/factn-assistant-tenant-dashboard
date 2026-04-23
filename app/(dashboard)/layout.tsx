@@ -5,6 +5,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/admin/app-sidebar";
 import { AdminHeader } from "@/components/admin/admin-header";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ThemeToggler } from "@/components/theme-toggler";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -44,6 +45,7 @@ export default async function DashboardLayout({
           </div>
         </TooltipProvider>
       </SidebarProvider>
+      <ThemeToggler className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 md:left-auto md:right-4 md:translate-x-0" />
     </div>
     </>
   )

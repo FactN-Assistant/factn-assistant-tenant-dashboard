@@ -28,7 +28,7 @@ export default function MainLayout({
     <div className="brand-shell min-h-screen">
       <HomeHeader />
       <ThemeToggler className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 sm:left-6 sm:translate-x-0" />
-      <main className="relative pt-24 sm:pt-28">{children}</main>
+      <main className="relative pt-44 sm:pt-32">{children}</main>
     </div>
   );
 }

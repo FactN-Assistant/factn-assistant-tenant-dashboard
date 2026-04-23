@@ -16,15 +16,15 @@ export default function AuthShell({
   blurb = "Manage projects, prompts, tooling, and voice flows from a single tenant-aware workspace.",
 }: AuthShellProps) {
   return (
-    <div className="brand-shell flex min-h-screen items-center px-4 py-4 sm:px-6 lg:px-8">
+    <div className="brand-shell flex min-h-screen items-center px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto grid w-full max-w-7xl gap-6 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] xl:gap-10">
-        <section className="brand-panel order-2 flex min-h-[580px] flex-col p-5 sm:p-8 lg:order-1">
+        <section className="brand-panel order-2 flex min-h-145 flex-col p-5 sm:p-8 lg:order-1">
           <Link href="/" className="w-fit">
             <BrandMark className="transition-transform duration-200 hover:scale-[1.01]" />
           </Link>
 
-          <div className="my-auto flex flex-col gap-6">
-            <div className="space-y-3">
+          <div className="mt-8 flex flex-1 flex-col justify-center gap-8 sm:mt-10">
+            <div className="space-y-4">
               <span className="inline-flex w-fit rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-primary">
                 {kicker}
               </span>
@@ -37,7 +37,7 @@ export default function AuthShell({
           </div>
         </section>
 
-        <aside className="brand-panel order-1 hidden min-h-[580px] overflow-hidden lg:order-2 lg:block">
+        <aside className="brand-panel order-1 hidden min-h-145 overflow-hidden lg:order-2 lg:block">
           <div className="relative flex h-full flex-col justify-between p-8 xl:p-10">
             <div className="space-y-4">
               <span className="inline-flex rounded-full border border-primary/20 bg-background/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-primary backdrop-blur-sm">

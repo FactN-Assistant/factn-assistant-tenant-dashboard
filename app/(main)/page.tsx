@@ -36,8 +36,8 @@ export default function HomePage() {
         />
       </div>
 
-      <section className="brand-panel relative overflow-hidden px-6 py-10 sm:px-8 sm:py-12 lg:px-12 lg:py-16">
-        <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+      <section className="brand-panel relative overflow-hidden px-6 mt-5 py-10 sm:px-8 sm:py-12 lg:px-12 lg:py-16">
+        <div className=" h-full absolute inset-x-8 top-0 bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1.15fr)_minmax(300px,0.85fr)] lg:items-end">
           <div className="space-y-6">
             <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-primary">
