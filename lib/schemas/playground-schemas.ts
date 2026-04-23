@@ -33,7 +33,6 @@ export const audioSettingsSchema = z.object({
 	chunkSize: z.number().int().min(160).max(16000),
 	autoPlay: z.boolean(),
 	showInChat: z.boolean(),
-	accumulateAudioFrames: z.boolean(),
 })
 
 export type ConnState = z.infer<typeof connStateSchema>

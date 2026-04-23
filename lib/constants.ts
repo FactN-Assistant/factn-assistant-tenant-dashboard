@@ -171,3 +171,24 @@ export const CLOSE_CODES: Record<number, string> = {
   4007: "Tenant account suspended",
   4008: "Daily token quota exceeded",
 };
+
+export const TYPE_BADGE: Record<string, string> = {
+  text_input: "bg-blue-500/15 text-blue-400 border-blue-500/30",
+  voice_start: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+  voice_end: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+  audio_chunk: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+  audio_pcm: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+  set_speaker: "bg-violet-500/15 text-violet-400 border-violet-500/30",
+  interrupt: "bg-red-500/15 text-red-400 border-red-500/30",
+  ping: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
+  pong: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
+  session_ready: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+  assistant_text: "bg-blue-500/15 text-blue-400 border-blue-500/30",
+  user_transcript: "bg-violet-500/15 text-violet-400 border-violet-500/30",
+  tool_call: "bg-violet-500/15 text-violet-400 border-violet-500/30",
+  turn_complete: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
+  speaker_mode_updated: "bg-violet-500/15 text-violet-400 border-violet-500/30",
+  error: "bg-red-500/15 text-red-400 border-red-500/30",
+  session_ended: "bg-red-500/15 text-red-400 border-red-500/30",
+  ws_event: "bg-orange-500/15 text-orange-400 border-orange-500/30",
+};
