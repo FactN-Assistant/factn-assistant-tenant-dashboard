@@ -69,7 +69,7 @@ export const createProjectFormSchema = z.object({
     .trim()
     .max(500, "Description must be 500 characters or fewer")
     .default(""),
-  gemini_model: z.string().min(1, "Model is required"),
+  // gemini_model: z.string().min(1, "Model is required"),
   webhook_url: z.string().default(""),
   webhook_secret: z.string().default(""),
   allowed_origins: z.string().default(""),

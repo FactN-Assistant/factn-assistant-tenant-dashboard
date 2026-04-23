@@ -137,7 +137,7 @@ export default function VoiceConfig() {
             Voice Configuration
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Configure how Gemini speaks and listens in this project.
+            Configure the voice characteristics and input detection mode.
           </p>
         </div>
 
@@ -168,22 +168,18 @@ export default function VoiceConfig() {
             <div className="flex flex-wrap gap-x-6 gap-y-1.5">
               <div className="flex items-center gap-1.5 text-xs">
                 <span className="text-muted-foreground">Voice output</span>
-                <Badge variant={voiceEnabled ? "default" : "secondary"} className="text-[10px] px-1.5 py-0">
-                  {voiceEnabled ? "enabled" : "disabled"}
+                <Badge variant="default" className="text-[10px] px-1.5 py-0">
+                  enabled
                 </Badge>
               </div>
-              {voiceEnabled && (
-                <>
-                  <div className="flex items-center gap-1.5 text-xs">
-                    <span className="text-muted-foreground">Voice</span>
-                    <span className="font-mono font-medium">{watch("voice_name")}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-xs">
-                    <span className="text-muted-foreground">Language</span>
-                    <span className="font-mono font-medium">{watch("language_code")}</span>
-                  </div>
-                </>
-              )}
+              <div className="flex items-center gap-1.5 text-xs">
+                <span className="text-muted-foreground">Voice</span>
+                <span className="font-mono font-medium">{watch("voice_name")}</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs">
+                <span className="text-muted-foreground">Language</span>
+                <span className="font-mono font-medium">{watch("language_code")}</span>
+              </div>
               <div className="flex items-center gap-1.5 text-xs">
                 <span className="text-muted-foreground">VAD</span>
                 <span className="font-mono font-medium">{watch("vad_mode")}</span>
@@ -201,31 +197,22 @@ export default function VoiceConfig() {
               Voice Output
             </CardTitle>
             <CardDescription className="text-xs">
-              Controls the Gemini prebuilt voice used for audio responses.
+              Choose the voice personality and language for audio responses.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
 
-            {/* Enable toggle */}
-            <div className="flex items-center justify-between rounded-lg border px-4 py-3">
+            {/* Enable toggle — always enabled (admin-controlled only) */}
+            <div className="flex items-center justify-between rounded-lg border border-dashed px-4 py-3 bg-muted/20">
               <div className="space-y-0.5">
-                <Label className="text-sm font-medium cursor-pointer">Enable voice output</Label>
+                <Label className="text-sm font-medium cursor-default flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                  Voice output
+                </Label>
                 <p className="text-xs text-muted-foreground">
-                  When off, the assistant responds with text only — no audio is streamed.
+                  Voice output is always enabled. Users can toggle speaker mode on/off during sessions.
                 </p>
               </div>
-              <Controller
-                control={control}
-                name="voice_enabled"
-                render={({ field }) => (
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                    aria-label="Enable voice output"
-                    disabled={isSaving}
-                  />
-                )}
-              />
             </div>
 
             {/* Dimmed when disabled */}

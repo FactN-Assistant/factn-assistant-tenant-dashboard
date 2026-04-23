@@ -27,15 +27,9 @@ import { useProject } from "@/hooks/useProject"
 import { usePlans } from "@/hooks/usePlans"
 import { type CreateProjectFormValues } from "@/lib/schemas/project-schemas"
 
-const SUPPORTED_MODELS = [
-  { value: "gemini-2.5-flash-native-audio-preview-12-2025", label: "Gemini 2.5 Flash (Native Audio)" },
-  { value: "gemini-2.0-flash-live-001", label: "Gemini 2.0 Flash Live" },
-]
-
 const DEFAULT_VALUES: CreateProjectFormValues = {
   name: "",
   description: "",
-  gemini_model: SUPPORTED_MODELS[0].value,
   webhook_url: "",
   webhook_secret: "",
   allowed_origins: "",
@@ -78,7 +72,6 @@ export default function ProjectInfo() {
       reset({
         name: selectedProject.name,
         description: selectedProject.description,
-        gemini_model: selectedProject.gemini_model,
         webhook_url: selectedProject.webhook_url ?? "",
         webhook_secret: "",
         allowed_origins: selectedProject.allowed_origins.join(", "),
@@ -96,7 +89,6 @@ export default function ProjectInfo() {
       reset({
         name: selectedProject.name,
         description: selectedProject.description,
-        gemini_model: selectedProject.gemini_model,
         webhook_url: selectedProject.webhook_url ?? "",
         webhook_secret: "",
         allowed_origins: selectedProject.allowed_origins.join(", "),
@@ -236,7 +228,7 @@ export default function ProjectInfo() {
               General
             </CardTitle>
             <CardDescription className="text-xs">
-              Basic project identity and model selection.
+              Basic project identity.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
@@ -268,37 +260,6 @@ export default function ProjectInfo() {
                 disabled={isSaving}
               />
               {errors.description && <p className="text-xs text-destructive">{errors.description.message}</p>}
-            </div>
-
-            {/* Gemini Model */}
-            <div className="space-y-1.5">
-              <FieldLabel
-                label="Gemini model"
-                tooltip="The Gemini model used for all sessions in this project. Changing the model takes effect on the next session."
-              />
-              <Controller
-                control={control}
-                name="gemini_model"
-                render={({ field }) => {
-                  const selectedModel = SUPPORTED_MODELS.find((m) => m.value === field.value)
-                  return (
-                    <Select value={field.value} onValueChange={field.onChange} disabled={isSaving}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select a model…">
-                          {selectedModel ? selectedModel.label : undefined}
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {SUPPORTED_MODELS.map((m) => (
-                          <SelectItem key={m.value} value={m.value}>
-                            {m.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )
-                }}
-              />
             </div>
 
           </CardContent>
